@@ -56,7 +56,7 @@ export async function GET(
     }
 
     // Filter perspectives to only show user's own (privacy!)
-    const userPerspective = conflict.perspectives.find(p => p.submitted_by === user.id)
+    const userPerspective = conflict.perspectives.find((p: any) => p.submitted_by === user.id)
     const hasUserSubmitted = !!userPerspective
     const hasPartnerSubmitted = conflict.perspectives.length === 2
 
