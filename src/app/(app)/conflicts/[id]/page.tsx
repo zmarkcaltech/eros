@@ -2,56 +2,193 @@
 
 import { use, useState, useEffect } from 'react'
 import Link from 'next/link'
-import ReactMarkdown from 'react-markdown'
+import { createClient } from '@/lib/supabase/client'
+import { MessageList } from '@/components/MessageList'
+import { MessageInput } from '@/components/MessageInput'
 
-export default function ConflictDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
-  const [conflict, setConflict] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+interface Message {
+  id: string
+  content: string
+  sender_type: 'partner_a' | 'partner_b' | 'ai'
+  sender_id: string | null
+  created_at: string
+  sender?: {
+    full_name: string
+  }
+}
+
+interface Conflict {
+  id: string
+  title: string
+  status: string
+  created_at: string
+  relationships: {
+    partner_a_id: string
+    partner_b_id: string
+    partner_a: { full_name: string }
+    partner_b: { full_name: string }
+  }
+}
+
+export default function ConflictChatPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: conflictId } = use(params)
+  const [conflict, setConflict] = useState<Conflict | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputValue, setInputValue] = useState('')
+  const [isSending, setIsSending] = useState(false)
+  const [isAITyping, setIsAITyping] = useState(false)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState('')
 
-  const fetchConflict = async () => {
+  const supabase = createClient()
+
+  // Fetch initial data and set up Realtime subscription
+  useEffect(() => {
+    const init = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setError('Not authenticated')
+          setLoading(false)
+          return
+        }
+        setCurrentUserId(user.id)
+
+        // Fetch conflict details
+        const { data: conflictData, error: conflictError } = await supabase
+          .from('conflicts')
+          .select(`
+            *,
+            relationships (
+              partner_a_id,
+              partner_b_id,
+              partner_a:profiles!relationships_partner_a_id_fkey(full_name),
+              partner_b:profiles!relationships_partner_b_id_fkey(full_name)
+            )
+          `)
+          .eq('id', conflictId)
+          .single()
+
+        if (conflictError || !conflictData) {
+          setError('Conflict not found')
+          setLoading(false)
+          return
+        }
+
+        setConflict(conflictData)
+
+        // Fetch initial messages
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conflict_id', conflictId)
+          .order('created_at', { ascending: true })
+
+        if (!messagesError && messagesData) {
+          setMessages(messagesData)
+        }
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Init error:', err)
+        setError('Failed to load chat')
+        setLoading(false)
+      }
+    }
+
+    init()
+
+    // Set up Realtime subscription for new messages
+    const channel = supabase
+      .channel(`conflict:${conflictId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conflict_id=eq.${conflictId}`
+        },
+        (payload) => {
+          const newMessage = payload.new as Message
+          setMessages(prev => [...prev, newMessage])
+
+          // Hide AI typing indicator when AI message arrives
+          if (newMessage.sender_type === 'ai') {
+            setIsAITyping(false)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [conflictId])
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isSending || !conflict) return
+
+    const content = inputValue.trim()
+    setIsSending(true)
+    setError('')
+    setIsAITyping(true) // Show AI typing indicator immediately
+
+    // Optimistic UI update
+    const tempMessage: Message = {
+      id: 'temp-' + Date.now(),
+      content,
+      sender_type: conflict.relationships.partner_a_id === currentUserId ? 'partner_a' : 'partner_b',
+      sender_id: currentUserId,
+      created_at: new Date().toISOString()
+    }
+
+    setMessages(prev => [...prev, tempMessage])
+    setInputValue('') // Clear input immediately
+
     try {
-      const response = await fetch(`/api/conflicts/${id}`)
-      const data = await response.json()
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conflict_id: conflictId,
+          content
+        })
+      })
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load conflict')
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to send message')
       }
 
-      setConflict(data.conflict)
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('Failed to load conflict')
-      }
+      // Real message will arrive via Realtime subscription
+      // Remove optimistic message
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+
+    } catch (err: any) {
+      console.error('Send message error:', err)
+      setError(err.message || 'Failed to send message. Please try again.')
+      setIsAITyping(false)
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+      // Restore input
+      setInputValue(content)
     } finally {
-      setLoading(false)
+      setIsSending(false)
     }
   }
-
-  useEffect(() => {
-    fetchConflict()
-    // Poll for updates every 10 seconds if processing
-    const interval = setInterval(() => {
-      if (conflict?.status === 'processing') {
-        fetchConflict()
-      }
-    }, 10000)
-
-    return () => clearInterval(interval)
-  }, [id, conflict?.status])
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-gray-600">Loading chat...</div>
       </div>
     )
   }
 
-  if (error) {
+  if (error && !conflict) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="container mx-auto px-4 py-8">
@@ -68,130 +205,75 @@ export default function ConflictDetailPage({ params }: { params: Promise<{ id: s
     )
   }
 
-  const getStatusDisplay = () => {
-    switch (conflict?.status) {
-      case 'awaiting_partner_a':
-      case 'awaiting_partner_b':
-        return {
-          icon: '⏳',
-          color: 'yellow',
-          title: conflict.hasUserSubmitted ? 'Waiting for Partner' : 'Your Turn',
-          message: conflict.hasUserSubmitted
-            ? 'Your partner will be notified to submit their perspective.'
-            : 'Please submit your perspective to continue.',
-        }
-      case 'processing':
-        return {
-          icon: '🤖',
-          color: 'blue',
-          title: 'AI is Analyzing',
-          message: 'Claude is reviewing both perspectives and generating therapeutic advice...',
-        }
-      case 'completed':
-        return {
-          icon: '✅',
-          color: 'green',
-          title: 'Advice Ready',
-          message: 'Our AI therapist has analyzed both perspectives.',
-        }
-      default:
-        return {
-          icon: '❓',
-          color: 'gray',
-          title: 'Unknown Status',
-          message: '',
-        }
-    }
-  }
-
-  const status = getStatusDisplay()
+  if (!conflict) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Link
-            href="/dashboard"
-            className="text-purple-600 hover:text-purple-700 mb-6 inline-flex items-center"
-          >
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back to Dashboard
-          </Link>
-
-          {/* Conflict Title */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{conflict?.title}</h1>
-            <p className="text-sm text-gray-500">
-              Started {new Date(conflict?.created_at).toLocaleDateString()}
-            </p>
-          </div>
-
-          {/* Status */}
-          <div className={`bg-${status.color}-50 border-2 border-${status.color}-200 rounded-lg p-6 mb-6`}>
-            <div className="flex items-center gap-4">
-              <div className="text-4xl">{status.icon}</div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">{status.title}</h2>
-                <p className="text-gray-700">{status.message}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          {!conflict?.hasUserSubmitted && conflict?.status !== 'completed' && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h3 className="font-semibold mb-4">Next Step</h3>
-              <Link
-                href={`/conflicts/${id}/submit`}
-                className="inline-block bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 transition-colors"
-              >
-                Submit Your Perspective
-              </Link>
-            </div>
-          )}
-
-          {/* User's Own Perspective (if submitted) */}
-          {conflict?.userPerspective && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h3 className="font-semibold text-lg mb-4">Your Perspective</h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-gray-800 whitespace-pre-wrap">{conflict.userPerspective.content}</p>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Submitted {new Date(conflict.userPerspective.created_at).toLocaleString()}
+    <div className="h-screen flex flex-col bg-gradient-to-br from-pink-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b px-4 py-3">
+        <div className="container mx-auto max-w-4xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="text-purple-600 hover:text-purple-700"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">{conflict.title}</h1>
+              <p className="text-xs text-gray-500">
+                {conflict.relationships.partner_a.full_name} & {conflict.relationships.partner_b.full_name}
               </p>
             </div>
-          )}
-
-          {/* AI Advice (if completed) */}
-          {conflict?.status === 'completed' && conflict?.advice && (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-md p-8 mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-2xl">🧠</span>
-                </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-gray-900">Therapeutic Advice</h3>
-                  <p className="text-sm text-gray-600">
-                    Generated {new Date(conflict.advice.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="prose prose-sm max-w-none bg-white rounded-lg p-6">
-                <ReactMarkdown>{conflict.advice.content}</ReactMarkdown>
-              </div>
-
-              <div className="mt-6 p-4 bg-white rounded-lg border border-indigo-200">
-                <p className="text-sm text-gray-700">
-                  <strong>Important:</strong> This advice is AI-generated and designed to complement, not replace, professional therapy. If your relationship involves abuse, safety concerns, or severe mental health issues, please seek help from a licensed professional.
-                </p>
-              </div>
-            </div>
-          )}
+          </div>
+          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+            conflict.status === 'active'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-gray-100 text-gray-700'
+          }`}>
+            {conflict.status === 'active' ? 'Active' : 'Archived'}
+          </div>
         </div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="container mx-auto max-w-4xl px-4 py-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+            {error}
+          </div>
+        </div>
+      )}
+
+      {/* Messages Area */}
+      <div className="flex-1 container mx-auto max-w-4xl flex flex-col overflow-hidden">
+        <MessageList
+          messages={messages}
+          currentUserId={currentUserId}
+          partnerAId={conflict.relationships.partner_a_id}
+          partnerBId={conflict.relationships.partner_b_id}
+          partnerAName={conflict.relationships.partner_a.full_name}
+          partnerBName={conflict.relationships.partner_b.full_name}
+          isAITyping={isAITyping}
+        />
+
+        {/* Input Area */}
+        {conflict.status === 'active' && (
+          <MessageInput
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSendMessage}
+            isSending={isSending}
+          />
+        )}
+
+        {conflict.status === 'archived' && (
+          <div className="bg-gray-100 p-4 text-center text-gray-600 text-sm">
+            This conversation has been archived and is read-only.
+          </div>
+        )}
       </div>
     </div>
   )
