@@ -61,7 +61,7 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
           .from('conflicts')
           .select(`
             *,
-            relationships (
+            relationships!inner (
               partner_a_id,
               partner_b_id,
               partner_a:profiles!relationships_partner_a_id_fkey(full_name),
@@ -77,7 +77,7 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
           return
         }
 
-        setConflict(conflictData)
+        setConflict(conflictData as any)
 
         // Fetch initial messages
         const { data: messagesData, error: messagesError } = await supabase
