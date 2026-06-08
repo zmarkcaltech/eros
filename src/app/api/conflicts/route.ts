@@ -76,17 +76,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active relationship found' }, { status: 404 })
     }
 
-    // Determine if user is partner A or B
-    const isPartnerA = relationship.partner_a_id === user.id
-    const initialStatus = isPartnerA ? 'awaiting_partner_a' : 'awaiting_partner_b'
-
-    // Create conflict
+    // Create conflict with 'active' status (chat-based model)
     const { data: conflict, error: createError } = await supabase
       .from('conflicts')
       .insert({
         relationship_id: relationship.id,
         title: title.trim(),
-        status: initialStatus,
+        status: 'active',
         initiated_by: user.id,
       })
       .select()

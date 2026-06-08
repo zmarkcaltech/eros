@@ -44,11 +44,9 @@ export default async function DashboardPage() {
   // Get conflicts for this relationship
   const { data: conflicts } = await supabase
     .from('conflicts')
-    .select(`
-      *,
-      perspectives (submitted_by)
-    `)
+    .select('*')
     .eq('relationship_id', relationship.id)
+    .order('last_message_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   // Get unread notifications
@@ -175,18 +173,13 @@ export default async function DashboardPage() {
             ) : conflicts && conflicts.length > 0 ? (
               <div className="space-y-4">
                 {conflicts.map((conflict) => {
-                  const userHasSubmitted = conflict.perspectives?.some((p: any) => p.submitted_by === user.id)
                   const statusColors = {
-                    awaiting_partner_a: 'bg-yellow-100 text-yellow-800',
-                    awaiting_partner_b: 'bg-yellow-100 text-yellow-800',
-                    processing: 'bg-blue-100 text-blue-800',
-                    completed: 'bg-green-100 text-green-800',
+                    active: 'bg-green-100 text-green-800',
+                    archived: 'bg-gray-100 text-gray-800',
                   }
                   const statusLabels = {
-                    awaiting_partner_a: userHasSubmitted ? 'Waiting for partner' : 'Your turn',
-                    awaiting_partner_b: userHasSubmitted ? 'Waiting for partner' : 'Your turn',
-                    processing: 'Processing...',
-                    completed: 'Completed',
+                    active: 'Active',
+                    archived: 'Archived',
                   }
 
                   return (
