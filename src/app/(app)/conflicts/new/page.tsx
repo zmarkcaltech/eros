@@ -28,8 +28,8 @@ export default function NewConflictPage() {
         throw new Error(data.error || 'Failed to create conflict')
       }
 
-      // Redirect to submit perspective page
-      router.push(`/conflicts/${data.conflict.id}/submit`)
+      // Redirect to chat page
+      router.push(`/conflicts/${data.conflict.id}`)
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
@@ -58,7 +58,7 @@ export default function NewConflictPage() {
           <div className="bg-white rounded-lg shadow-md p-8 mt-4">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Start Conflict Resolution</h1>
             <p className="text-gray-600 mb-8">
-              Begin by giving this conflict a clear, descriptive title. You'll share your perspective in the next step.
+              Begin by giving this conflict a clear, descriptive title. You'll start a mediation chat with your partner and an AI therapist.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -90,10 +90,10 @@ export default function NewConflictPage() {
                   <div className="text-sm text-blue-800">
                     <p className="font-semibold mb-1">What happens next:</p>
                     <ol className="list-decimal list-inside space-y-1">
-                      <li>You'll share your perspective privately</li>
-                      <li>Your partner will be notified to share theirs</li>
-                      <li>Neither of you will see each other's perspectives</li>
-                      <li>Our AI will analyze both sides and provide balanced advice</li>
+                      <li>You'll enter a chat room with your partner</li>
+                      <li>Both of you can send messages back and forth</li>
+                      <li>An AI therapist will respond after each message</li>
+                      <li>The AI helps facilitate productive dialogue and resolution</li>
                     </ol>
                   </div>
                 </div>
@@ -117,7 +117,7 @@ export default function NewConflictPage() {
                   disabled={loading || title.trim().length < 5}
                   className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {loading ? 'Creating...' : 'Continue to Share Perspective'}
+                  {loading ? 'Creating...' : 'Start Chat'}
                 </button>
               </div>
             </form>
