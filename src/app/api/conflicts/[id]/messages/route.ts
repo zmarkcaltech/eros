@@ -49,7 +49,8 @@ export async function GET(
         .from('conflicts')
         .select(`
           id,
-          relationships (
+          relationship_id,
+          relationships!inner (
             partner_a_id,
             partner_b_id
           )
@@ -61,8 +62,10 @@ export async function GET(
         return NextResponse.json({ error: 'Conflict not found' }, { status: 404 })
       }
 
-      const isPartner = conflict.relationships.partner_a_id === user.id ||
-                       conflict.relationships.partner_b_id === user.id
+      // relationships is returned as an object when using !inner and single relationship
+      const relationships = conflict.relationships as any
+      const isPartner = relationships.partner_a_id === user.id ||
+                       relationships.partner_b_id === user.id
 
       if (!isPartner) {
         return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
