@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  // Get user's relationship
+  // Get user's relationship with partner profiles
   const { data: relationship } = await supabase
     .from('relationships')
     .select(`
@@ -37,25 +37,11 @@ export default async function DashboardPage() {
 
   // Determine if relationship is active (both partners linked)
   const isActive = relationship.status === 'active' && relationship.partner_b_id !== null
-  const partnerProfile = relationship.partner_a_id === user.id
-    ? relationship.partner_b
-    : relationship.partner_a
 
-  // Get conflicts for this relationship
-  const { data: conflicts } = await supabase
-    .from('conflicts')
-    .select('*')
-    .eq('relationship_id', relationship.id)
-    .order('last_message_at', { ascending: false, nullsFirst: false })
-    .order('created_at', { ascending: false })
-
-  // Get unread notifications
-  const { data: notifications } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('read', false)
-    .order('created_at', { ascending: false })
+  // Get partner profile
+  const isPartnerA = relationship.partner_a_id === user.id
+  const partnerProfile = isPartnerA ? relationship.partner_b : relationship.partner_a
+  const userProfile = isPartnerA ? relationship.partner_a : relationship.partner_b
 
   // Logout function
   const handleLogout = async () => {
@@ -74,7 +60,7 @@ export default async function DashboardPage() {
             <h1 className="text-2xl font-bold text-purple-600">Eros</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-gray-600">Welcome, {profile?.full_name}</span>
+            <span className="text-gray-600">Welcome, {userProfile?.preferred_name || userProfile?.full_name}</span>
             <form action={handleLogout}>
               <button
                 type="submit"
@@ -88,9 +74,10 @@ export default async function DashboardPage() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
+
           {/* Relationship Status */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">Relationship Status</h2>
             {isActive ? (
               <div className="flex items-center gap-4">
@@ -100,8 +87,12 @@ export default async function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold">Linked with {partnerProfile?.full_name}</p>
-                  <p className="text-sm text-gray-600">You can now start resolving conflicts together</p>
+                  <p className="font-semibold">Active with {partnerProfile?.preferred_name || partnerProfile?.full_name}</p>
+                  <p className="text-sm text-gray-600">
+                    {relationship.message_count > 0
+                      ? `${relationship.message_count} messages exchanged`
+                      : 'Start a conversation in the chat'}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -119,96 +110,117 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* Notifications */}
-          {notifications && notifications.length > 0 && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <span>🔔</span> Notifications
-              </h2>
-              <div className="space-y-3">
-                {notifications.map((notification) => (
-                  <div key={notification.id} className="bg-white rounded-lg p-4 shadow-sm">
-                    {notification.type === 'partner_submitted' && (
-                      <p className="text-gray-800">
-                        <strong>{partnerProfile?.full_name}</strong> has submitted their perspective. It's your turn!
-                      </p>
+          {/* About You & Your Partner */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4">About You & Your Partner</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Your Profile */}
+              <div className="border rounded-lg p-4 bg-purple-50">
+                <div className="flex justify-between items-start mb-3">
+                  <h3 className="font-semibold text-purple-900">Your Profile</h3>
+                  <span className="text-xs text-purple-600 hover:text-purple-700 cursor-pointer">
+                    Edit (coming soon)
+                  </span>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <p><span className="font-medium">Name:</span> {userProfile?.preferred_name || userProfile?.full_name}</p>
+                  {userProfile?.age && <p><span className="font-medium">Age:</span> {userProfile.age}</p>}
+                  {userProfile?.pronouns && <p><span className="font-medium">Pronouns:</span> {userProfile.pronouns}</p>}
+                  {userProfile?.occupation && <p><span className="font-medium">Occupation:</span> {userProfile.occupation}</p>}
+                  {userProfile?.interests && <p><span className="font-medium">Interests:</span> {userProfile.interests}</p>}
+                  {userProfile?.self_description && (
+                    <p><span className="font-medium">About:</span> {userProfile.self_description}</p>
+                  )}
+                  {!userProfile?.age && !userProfile?.pronouns && !userProfile?.occupation && (
+                    <p className="text-gray-500 italic">No additional information yet</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Partner's Profile */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h3 className="font-semibold text-gray-900 mb-3">Partner's Profile</h3>
+                {isActive ? (
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">Name:</span> {partnerProfile?.preferred_name || partnerProfile?.full_name}</p>
+                    {partnerProfile?.age && <p><span className="font-medium">Age:</span> {partnerProfile.age}</p>}
+                    {partnerProfile?.pronouns && <p><span className="font-medium">Pronouns:</span> {partnerProfile.pronouns}</p>}
+                    {partnerProfile?.occupation && <p><span className="font-medium">Occupation:</span> {partnerProfile.occupation}</p>}
+                    {partnerProfile?.interests && <p><span className="font-medium">Interests:</span> {partnerProfile.interests}</p>}
+                    {partnerProfile?.self_description && (
+                      <p><span className="font-medium">About:</span> {partnerProfile.self_description}</p>
                     )}
-                    {notification.type === 'advice_ready' && (
-                      <p className="text-gray-800">
-                        <strong>AI advice is ready</strong> for your conflict
-                      </p>
-                    )}
-                    {notification.conflict_id && (
-                      <Link
-                        href={`/conflicts/${notification.conflict_id}`}
-                        className="text-purple-600 hover:text-purple-700 text-sm mt-2 inline-block"
-                      >
-                        View Conflict →
-                      </Link>
+                    {!partnerProfile?.age && !partnerProfile?.pronouns && !partnerProfile?.occupation && (
+                      <p className="text-gray-500 italic">No additional information yet</p>
                     )}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-gray-500 italic text-sm">Waiting for partner to join...</p>
+                )}
               </div>
+            </div>
+
+            {/* Relationship Details */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="font-semibold text-gray-900">Relationship Details</h3>
+                <span className="text-xs text-purple-600 hover:text-purple-700 cursor-pointer">
+                  Edit (coming soon)
+                </span>
+              </div>
+              <div className="space-y-2 text-sm text-gray-700">
+                {relationship.duration_months && (
+                  <p><span className="font-medium">Together for:</span> {Math.floor(relationship.duration_months / 12)} years, {relationship.duration_months % 12} months</p>
+                )}
+                {relationship.relationship_description && (
+                  <p><span className="font-medium">About us:</span> {relationship.relationship_description}</p>
+                )}
+                {relationship.relationship_goals && (
+                  <p><span className="font-medium">Therapy goals:</span> {relationship.relationship_goals}</p>
+                )}
+                {relationship.how_we_met && (
+                  <p><span className="font-medium">How we met:</span> {relationship.how_we_met}</p>
+                )}
+                {relationship.living_situation && (
+                  <p><span className="font-medium">Living situation:</span> {relationship.living_situation}</p>
+                )}
+                {relationship.children_info && (
+                  <p><span className="font-medium">Children:</span> {relationship.children_info}</p>
+                )}
+                {!relationship.duration_months && !relationship.relationship_description && !relationship.relationship_goals && (
+                  <p className="text-gray-500 italic">No relationship details yet. Add information to help your AI therapist understand your relationship better.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Open Chat */}
+          {isActive && (
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg shadow-lg p-8 text-white text-center">
+              <h2 className="text-2xl font-bold mb-2">Start Your Therapy Session</h2>
+              <p className="mb-6 opacity-90">Chat with your partner and AI therapist</p>
+              <Link
+                href="/chat"
+                className="inline-block bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors shadow-md"
+              >
+                Open Chat
+              </Link>
             </div>
           )}
 
-          {/* Conflicts Section */}
+          {/* Exercises - Coming Soon */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Conflicts</h2>
-              {isActive && (
-                <Link
-                  href="/conflicts/new"
-                  className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  Create Conflict
-                </Link>
-              )}
+            <h2 className="text-xl font-semibold mb-4">Relationship Exercises</h2>
+            <div className="text-center py-12 text-gray-500">
+              <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <p className="text-lg font-medium mb-2">Coming Soon</p>
+              <p className="text-sm">Guided exercises to strengthen your relationship will be available here.</p>
             </div>
-
-            {!isActive ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>Link with your partner to start resolving conflicts together</p>
-              </div>
-            ) : conflicts && conflicts.length > 0 ? (
-              <div className="space-y-4">
-                {conflicts.map((conflict) => {
-                  const statusColors = {
-                    active: 'bg-green-100 text-green-800',
-                    archived: 'bg-gray-100 text-gray-800',
-                  }
-                  const statusLabels = {
-                    active: 'Active',
-                    archived: 'Archived',
-                  }
-
-                  return (
-                    <Link
-                      key={conflict.id}
-                      href={`/conflicts/${conflict.id}`}
-                      className="block bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900">{conflict.title}</h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Created {new Date(conflict.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[conflict.status as keyof typeof statusColors]}`}>
-                          {statusLabels[conflict.status as keyof typeof statusLabels]}
-                        </span>
-                      </div>
-                    </Link>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>No conflicts yet. Click "Create Conflict" to get started.</p>
-              </div>
-            )}
           </div>
+
         </div>
       </div>
     </div>

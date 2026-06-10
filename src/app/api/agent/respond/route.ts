@@ -6,54 +6,61 @@ import { NextRequest, NextResponse } from 'next/server'
 // POST /api/agent/respond - Generate AI response to latest partner message
 export async function POST(request: NextRequest) {
   try {
-    const { conflict_id } = await request.json()
+    const { relationship_id } = await request.json()
 
-    if (!conflict_id) {
-      return NextResponse.json({ error: 'Conflict ID is required' }, { status: 400 })
+    if (!relationship_id) {
+      return NextResponse.json({ error: 'Relationship ID is required' }, { status: 400 })
     }
 
     // Use service role client to read all messages
     const supabase = createServiceClient()
 
-    // Fetch conflict with relationship and partner profiles
-    const { data: conflict, error: conflictError } = await supabase
-      .from('conflicts')
+    // Fetch relationship with partner profiles
+    const { data: relationship, error: relationshipError } = await supabase
+      .from('relationships')
       .select(`
         *,
-        relationships (
-          *,
-          partner_a:profiles!relationships_partner_a_id_fkey(
-            id,
-            full_name,
-            self_description
-          ),
-          partner_b:profiles!relationships_partner_b_id_fkey(
-            id,
-            full_name,
-            self_description
-          )
+        partner_a:profiles!relationships_partner_a_id_fkey(
+          id,
+          full_name,
+          preferred_name,
+          self_description,
+          age,
+          pronouns,
+          occupation,
+          interests
+        ),
+        partner_b:profiles!relationships_partner_b_id_fkey(
+          id,
+          full_name,
+          preferred_name,
+          self_description,
+          age,
+          pronouns,
+          occupation,
+          interests
         )
       `)
-      .eq('id', conflict_id)
+      .eq('id', relationship_id)
       .single()
 
-    if (conflictError || !conflict) {
-      console.error('Conflict fetch error:', conflictError)
-      return NextResponse.json({ error: 'Conflict not found' }, { status: 404 })
+    if (relationshipError || !relationship) {
+      console.error('Relationship fetch error:', relationshipError)
+      return NextResponse.json({ error: 'Relationship not found' }, { status: 404 })
     }
 
-    // Check if conflict is active
-    if (conflict.status !== 'active') {
-      return NextResponse.json({ error: 'Conflict is not active' }, { status: 400 })
+    // Check if relationship is active
+    if (relationship.status !== 'active') {
+      return NextResponse.json({ error: 'Relationship is not active' }, { status: 400 })
     }
 
-    // Fetch all messages in conversation (last 50 for context window)
+    // Fetch all messages in conversation (last 100 for full context)
     const { data: messages, error: messagesError } = await supabase
       .from('messages')
       .select('*')
-      .eq('conflict_id', conflict_id)
+      .eq('relationship_id', relationship_id)
       .order('created_at', { ascending: true })
-      .limit(50)
+      .limit(100)
 
     if (messagesError) {
       console.error('Messages fetch error:', messagesError)
@@ -72,18 +79,18 @@ export async function POST(request: NextRequest) {
     // Build conversation context for Claude
     const claudeMessages = buildConversationContext(
       messages || [],
-      conflict.relationships.partner_a,
-      conflict.relationships.partner_b
+      relationship.partner_a,
+      relationship.partner_b
     )
 
-    console.log('Calling Claude API for conflict:', conflict_id)
+    console.log('Calling Claude API for relationship:', relationship_id)
 
     // Call Claude API
     const response = await anthropic.messages.create({
       model: AGENT_CONFIG.model,
-      max_tokens: 2048, // Shorter responses for chat
+      max_tokens: 2048, // Concise responses for ongoing chat
       temperature: AGENT_CONFIG.temperature,
-      system: buildTherapistSystemPrompt(conflict),
+      system: buildTherapistSystemPrompt(relationship),
       messages: claudeMessages
     })
 
@@ -97,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Insert AI message
     const { error: messageError } = await supabase.from('messages').insert({
-      conflict_id,
+      relationship_id,
       sender_type: 'ai',
       sender_id: null,
       content: aiContent,
@@ -110,10 +117,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to store AI response' }, { status: 500 })
     }
 
-    // Optionally notify both partners that AI responded
-    // (Skip if they're actively in the chat - handled by Realtime)
+    // Realtime handles notifying partners of AI response
 
-    console.log('AI response generated successfully for conflict:', conflict_id)
+    console.log('AI response generated successfully for relationship:', relationship_id)
 
     return NextResponse.json({
       success: true,

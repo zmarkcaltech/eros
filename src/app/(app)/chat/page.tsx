@@ -17,22 +17,17 @@ interface Message {
   }
 }
 
-interface Conflict {
+interface Relationship {
   id: string
-  title: string
   status: string
-  created_at: string
-  relationships: {
-    partner_a_id: string
-    partner_b_id: string
-    partner_a: { full_name: string }
-    partner_b: { full_name: string }
-  }
+  partner_a_id: string
+  partner_b_id: string
+  partner_a: { full_name: string; preferred_name: string | null }
+  partner_b: { full_name: string; preferred_name: string | null }
 }
 
-export default function ConflictChatPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: conflictId } = use(params)
-  const [conflict, setConflict] = useState<Conflict | null>(null)
+export default function ChatPage() {
+  const [relationship, setRelationship] = useState<Relationship | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -56,34 +51,31 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
         }
         setCurrentUserId(user.id)
 
-        // Fetch conflict details
-        const { data: conflictData, error: conflictError } = await supabase
-          .from('conflicts')
+        // Fetch user's relationship
+        const { data: relationshipData, error: relationshipError } = await supabase
+          .from('relationships')
           .select(`
             *,
-            relationships!inner (
-              partner_a_id,
-              partner_b_id,
-              partner_a:profiles!relationships_partner_a_id_fkey(full_name),
-              partner_b:profiles!relationships_partner_b_id_fkey(full_name)
-            )
+            partner_a:profiles!relationships_partner_a_id_fkey(full_name, preferred_name),
+            partner_b:profiles!relationships_partner_b_id_fkey(full_name, preferred_name)
           `)
-          .eq('id', conflictId)
+          .or(`partner_a_id.eq.${user.id},partner_b_id.eq.${user.id}`)
+          .eq('status', 'active')
           .single()
 
-        if (conflictError || !conflictData) {
-          setError('Conflict not found')
+        if (relationshipError || !relationshipData) {
+          setError('No active relationship found. Please link with your partner first.')
           setLoading(false)
           return
         }
 
-        setConflict(conflictData as any)
+        setRelationship(relationshipData as any)
 
         // Fetch initial messages
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
           .select('*')
-          .eq('conflict_id', conflictId)
+          .eq('relationship_id', relationshipData.id)
           .order('created_at', { ascending: true })
 
         if (!messagesError && messagesData) {
@@ -99,17 +91,22 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
     }
 
     init()
+  }, [])
 
-    // Set up Realtime subscription for new messages
+  // Set up Realtime subscription after relationship is loaded
+  useEffect(() => {
+    if (!relationship) return
+
+    // Subscribe to new messages
     const channel = supabase
-      .channel(`conflict:${conflictId}`)
+      .channel(`relationship:${relationship.id}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `conflict_id=eq.${conflictId}`
+          filter: `relationship_id=eq.${relationship.id}`
         },
         (payload) => {
           const newMessage = payload.new as Message
@@ -126,10 +123,10 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
     return () => {
       channel.unsubscribe()
     }
-  }, [conflictId])
+  }, [relationship?.id])
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isSending || !conflict) return
+    if (!inputValue.trim() || isSending || !relationship) return
 
     const content = inputValue.trim()
     setIsSending(true)
@@ -140,7 +137,7 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
     const tempMessage: Message = {
       id: 'temp-' + Date.now(),
       content,
-      sender_type: conflict.relationships.partner_a_id === currentUserId ? 'partner_a' : 'partner_b',
+      sender_type: relationship.partner_a_id === currentUserId ? 'partner_a' : 'partner_b',
       sender_id: currentUserId,
       created_at: new Date().toISOString()
     }
@@ -153,7 +150,7 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conflict_id: conflictId,
+          relationship_id: relationship.id,
           content
         })
       })
@@ -188,7 +185,7 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
     )
   }
 
-  if (error && !conflict) {
+  if (error && !relationship) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
         <div className="container mx-auto px-4 py-8">
@@ -205,7 +202,10 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
     )
   }
 
-  if (!conflict) return null
+  if (!relationship) return null
+
+  const partnerAName = relationship.partner_a.preferred_name || relationship.partner_a.full_name
+  const partnerBName = relationship.partner_b.preferred_name || relationship.partner_b.full_name
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-pink-50 to-purple-50">
@@ -222,18 +222,14 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
               </svg>
             </Link>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">{conflict.title}</h1>
+              <h1 className="text-lg font-semibold text-gray-900">Couples Therapy Chat</h1>
               <p className="text-xs text-gray-500">
-                {conflict.relationships.partner_a.full_name} & {conflict.relationships.partner_b.full_name}
+                {partnerAName} & {partnerBName} with AI Therapist
               </p>
             </div>
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-            conflict.status === 'active'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-gray-100 text-gray-700'
-          }`}>
-            {conflict.status === 'active' ? 'Active' : 'Archived'}
+          <div className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+            Active
           </div>
         </div>
       </div>
@@ -252,28 +248,20 @@ export default function ConflictChatPage({ params }: { params: Promise<{ id: str
         <MessageList
           messages={messages}
           currentUserId={currentUserId}
-          partnerAId={conflict.relationships.partner_a_id}
-          partnerBId={conflict.relationships.partner_b_id}
-          partnerAName={conflict.relationships.partner_a.full_name}
-          partnerBName={conflict.relationships.partner_b.full_name}
+          partnerAId={relationship.partner_a_id}
+          partnerBId={relationship.partner_b_id}
+          partnerAName={partnerAName}
+          partnerBName={partnerBName}
           isAITyping={isAITyping}
         />
 
         {/* Input Area */}
-        {conflict.status === 'active' && (
-          <MessageInput
-            value={inputValue}
-            onChange={setInputValue}
-            onSend={handleSendMessage}
-            isSending={isSending}
-          />
-        )}
-
-        {conflict.status === 'archived' && (
-          <div className="bg-gray-100 p-4 text-center text-gray-600 text-sm">
-            This conversation has been archived and is read-only.
-          </div>
-        )}
+        <MessageInput
+          value={inputValue}
+          onChange={setInputValue}
+          onSend={handleSendMessage}
+          isSending={isSending}
+        />
       </div>
     </div>
   )
