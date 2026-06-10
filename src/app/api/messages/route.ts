@@ -15,8 +15,15 @@ export async function POST(request: NextRequest) {
     // Parse request body
     const { relationship_id, content } = await request.json()
 
+    // Validate relationship_id
+    if (!relationship_id) {
+      console.error('Missing relationship_id in request')
+      return NextResponse.json({ error: 'Relationship ID is required' }, { status: 400 })
+    }
+
     // Validate content
     if (!content || typeof content !== 'string') {
+      console.error('Invalid content in request')
       return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
 
@@ -37,8 +44,12 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (relationshipError || !relationship) {
+      console.error('Relationship fetch error:', relationshipError)
+      console.error('Relationship ID:', relationship_id)
       return NextResponse.json({ error: 'Relationship not found' }, { status: 404 })
     }
+
+    console.log('Relationship found:', relationship.id, 'Status:', relationship.status)
 
     // Verify user is a partner in this relationship
     const isPartnerA = relationship.partner_a_id === user.id
@@ -57,6 +68,7 @@ export async function POST(request: NextRequest) {
     const sender_type = isPartnerA ? 'partner_a' : 'partner_b'
 
     // Insert message
+    console.log('Attempting to insert message:', { relationship_id, sender_id: user.id, sender_type })
     const { data: message, error: messageError } = await supabase
       .from('messages')
       .insert({
@@ -70,8 +82,11 @@ export async function POST(request: NextRequest) {
 
     if (messageError) {
       console.error('Message insert error:', messageError)
-      return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
+      console.error('Message details:', { relationship_id, sender_id: user.id, sender_type, contentLength: trimmedContent.length })
+      return NextResponse.json({ error: 'Failed to send message', details: messageError.message }, { status: 500 })
     }
+
+    console.log('Message inserted successfully:', message.id)
 
     // Relationship metadata (last_message_at, message_count) is updated automatically by database trigger
 
