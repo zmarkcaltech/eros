@@ -20,7 +20,7 @@ export function MessageItem({ message, isCurrentUser, senderName }: MessageItemP
     <div className={`flex ${isCurrentUser && !isAI ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-[75%] rounded-lg p-4 ${
         isAI
-          ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-indigo-200'
+          ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-indigo-200 text-gray-900'
           : isCurrentUser
             ? 'bg-purple-600 text-white'
             : 'bg-gray-100 text-gray-900'
@@ -33,7 +33,9 @@ export function MessageItem({ message, isCurrentUser, senderName }: MessageItemP
         )}
 
         {/* Message content */}
-        <div className="whitespace-pre-wrap break-words">
+        <div className={`whitespace-pre-wrap break-words ${
+          isAI ? 'text-gray-900' : isCurrentUser ? 'text-white' : 'text-gray-900'
+        }`}>
           {message.content}
         </div>
 

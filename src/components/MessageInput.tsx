@@ -28,7 +28,7 @@ export function MessageInput({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
-          className="flex-1 resize-none border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="flex-1 resize-none border border-gray-300 rounded-lg p-3 text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           rows={3}
           maxLength={maxLength}
           disabled={isSending}
