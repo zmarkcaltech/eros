@@ -12,6 +12,7 @@ interface Photo {
   caption: string | null
   uploaded_by: string
   created_at: string
+  is_favorite: boolean
 }
 
 interface Relationship {
@@ -163,6 +164,33 @@ export default function PhotosClient({ relationship, photos: initialPhotos, user
     }
   }
 
+  const handleToggleFavorite = async (photoId: string, currentFavoriteStatus: boolean) => {
+    try {
+      if (currentFavoriteStatus) {
+        // Unfavorite this photo
+        const { error } = await supabase
+          .from('relationship_photos')
+          .update({ is_favorite: false })
+          .eq('id', photoId)
+
+        if (error) throw error
+      } else {
+        // Set this photo as favorite (unique constraint will automatically unset previous favorite)
+        const { error } = await supabase
+          .from('relationship_photos')
+          .update({ is_favorite: true })
+          .eq('id', photoId)
+
+        if (error) throw error
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      alert('Failed to update favorite photo')
+    }
+  }
+
   const partnerA = relationship.partner_a as any
   const partnerB = relationship.partner_b as any
   const partnerAName = partnerA.preferred_name || partnerA.full_name
@@ -227,7 +255,16 @@ export default function PhotosClient({ relationship, photos: initialPhotos, user
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {photos.map((photo) => (
-              <div key={photo.id} className="bg-white rounded-xl shadow-lg overflow-hidden group">
+              <div key={photo.id} className="bg-white rounded-xl shadow-lg overflow-hidden group relative">
+                {/* Favorite Badge */}
+                {photo.is_favorite && (
+                  <div className="absolute top-3 left-3 z-10 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    Favorite
+                  </div>
+                )}
                 <div className="relative aspect-square">
                   <Image
                     src={photo.photo_url}
@@ -237,6 +274,19 @@ export default function PhotosClient({ relationship, photos: initialPhotos, user
                   />
                   {/* Overlay on hover */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => handleToggleFavorite(photo.id, photo.is_favorite)}
+                      className={`p-2 rounded-full transition-colors ${
+                        photo.is_favorite
+                          ? 'bg-yellow-400/90 hover:bg-yellow-400'
+                          : 'bg-white/90 hover:bg-white'
+                      }`}
+                      title={photo.is_favorite ? 'Remove from favorite' : 'Set as favorite'}
+                    >
+                      <svg className={`w-5 h-5 ${photo.is_favorite ? 'text-yellow-900' : 'text-gray-700'}`} fill={photo.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                      </svg>
+                    </button>
                     <button
                       onClick={() => {
                         setSelectedPhoto(photo)

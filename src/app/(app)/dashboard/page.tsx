@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -42,6 +43,14 @@ export default async function DashboardPage() {
   const isPartnerA = relationship.partner_a_id === user.id
   const partnerProfile = isPartnerA ? relationship.partner_b : relationship.partner_a
   const userProfile = isPartnerA ? relationship.partner_a : relationship.partner_b
+
+  // Get favorite relationship photo
+  const { data: favoritePhoto } = await supabase
+    .from('relationship_photos')
+    .select('*')
+    .eq('relationship_id', relationship.id)
+    .eq('is_favorite', true)
+    .single()
 
   // Logout function
   const handleLogout = async () => {
@@ -97,37 +106,123 @@ export default async function DashboardPage() {
         <div className="max-w-4xl mx-auto space-y-6">
 
           {/* Relationship Status */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4">Relationship Status</h2>
-            {isActive ? (
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold">Active with {partnerProfile?.preferred_name || partnerProfile?.full_name}</p>
-                  <p className="text-sm text-gray-600">
-                    {relationship.message_count > 0
-                      ? `${relationship.message_count} messages exchanged`
-                      : 'Start a conversation in the chat'}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold">Waiting for partner to join</p>
-                  <p className="text-sm text-gray-600">Share your link code: <span className="font-mono font-bold text-purple-600">{relationship.link_code}</span></p>
-                </div>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {isActive && favoritePhoto && (
+              <div className="relative h-64 bg-gradient-to-br from-purple-100 to-pink-100">
+                <Image
+                  src={favoritePhoto.photo_url}
+                  alt={favoritePhoto.caption || 'Favorite couple photo'}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                {favoritePhoto.caption && (
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <p className="text-white text-lg font-semibold">{favoritePhoto.caption}</p>
+                  </div>
+                )}
+                <Link
+                  href="/photos"
+                  className="absolute top-4 right-4 bg-white/90 hover:bg-white px-3 py-1.5 rounded-full text-sm font-medium transition-colors"
+                >
+                  Change favorite
+                </Link>
               </div>
             )}
+
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-4">Your Relationship</h2>
+              {isActive ? (
+                <div className="space-y-4">
+                  {/* Partner Avatars */}
+                  <div className="flex items-center justify-center gap-6">
+                    {/* User Avatar */}
+                    <div className="flex flex-col items-center">
+                      {userProfile?.avatar_url ? (
+                        <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-purple-200">
+                          <Image
+                            src={userProfile.avatar_url}
+                            alt={userProfile.full_name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-2xl font-bold border-4 border-purple-200">
+                          {userProfile?.full_name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <p className="text-sm font-medium text-gray-700 mt-2">You</p>
+                    </div>
+
+                    {/* Heart Icon */}
+                    <div className="text-3xl text-red-500 animate-pulse">
+                      ❤️
+                    </div>
+
+                    {/* Partner Avatar */}
+                    <div className="flex flex-col items-center">
+                      {partnerProfile?.avatar_url ? (
+                        <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-pink-200">
+                          <Image
+                            src={partnerProfile.avatar_url}
+                            alt={partnerProfile.full_name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-400 to-purple-400 flex items-center justify-center text-white text-2xl font-bold border-4 border-pink-200">
+                          {partnerProfile?.full_name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <p className="text-sm font-medium text-gray-700 mt-2">
+                        {partnerProfile?.preferred_name || partnerProfile?.full_name}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status Info */}
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-sm font-medium text-green-700">Active Relationship</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2">
+                      {relationship.message_count > 0
+                        ? `${relationship.message_count} messages exchanged`
+                        : 'Start a conversation in the chat'}
+                    </p>
+                  </div>
+
+                  {/* Add Favorite Photo CTA */}
+                  {!favoritePhoto && (
+                    <div className="mt-4 p-4 bg-purple-50 rounded-lg text-center border-2 border-dashed border-purple-200">
+                      <p className="text-sm text-purple-900 font-medium mb-2">📸 Set a favorite photo</p>
+                      <p className="text-xs text-purple-700 mb-3">Upload a photo and mark it as favorite to display it here</p>
+                      <Link
+                        href="/photos"
+                        className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                      >
+                        Go to Photos
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Waiting for partner to join</p>
+                    <p className="text-sm text-gray-600">Share your link code: <span className="font-mono font-bold text-purple-600">{relationship.link_code}</span></p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* About You & Your Partner */}
