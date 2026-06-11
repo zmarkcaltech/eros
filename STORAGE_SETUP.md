@@ -25,84 +25,97 @@ After running the database migration `20260612000003_add_photo_uploads.sql`, you
 
 ### For 'avatars' bucket:
 
-Go to Storage → avatars → Policies, then add these policies:
+Go to Storage → avatars → Policies → "New Policy"
 
 #### Policy 1: Users can upload their own avatar
-```sql
-CREATE POLICY "Users can upload their own avatar"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'avatars'
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Users can upload their own avatar`
+   - **Policy command**: `INSERT`
+   - **WITH CHECK expression**:
+   ```sql
+   bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
+   ```
+3. Click "Review" then "Save policy"
 
 #### Policy 2: Users can update their own avatar
-```sql
-CREATE POLICY "Users can update their own avatar"
-ON storage.objects FOR UPDATE
-USING (
-  bucket_id = 'avatars'
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Users can update their own avatar`
+   - **Policy command**: `UPDATE`
+   - **USING expression**:
+   ```sql
+   bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
+   ```
+3. Click "Review" then "Save policy"
 
 #### Policy 3: Users can delete their own avatar
-```sql
-CREATE POLICY "Users can delete their own avatar"
-ON storage.objects FOR DELETE
-USING (
-  bucket_id = 'avatars'
-  AND auth.uid()::text = (storage.foldername(name))[1]
-);
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Users can delete their own avatar`
+   - **Policy command**: `DELETE`
+   - **USING expression**:
+   ```sql
+   bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]
+   ```
+3. Click "Review" then "Save policy"
 
 #### Policy 4: Anyone can view avatars
-```sql
-CREATE POLICY "Anyone can view avatars"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'avatars');
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Anyone can view avatars`
+   - **Policy command**: `SELECT`
+   - **USING expression**:
+   ```sql
+   bucket_id = 'avatars'
+   ```
+3. Click "Review" then "Save policy"
 
 ### For 'relationship-photos' bucket:
 
-Go to Storage → relationship-photos → Policies, then add these policies:
+Go to Storage → relationship-photos → Policies → "New Policy"
 
 #### Policy 1: Partners can upload relationship photos
-```sql
-CREATE POLICY "Partners can upload relationship photos"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'relationship-photos'
-  AND EXISTS (
-    SELECT 1 FROM relationships r
-    WHERE r.id::text = (storage.foldername(name))[1]
-      AND (r.partner_a_id = auth.uid() OR r.partner_b_id = auth.uid())
-      AND r.status = 'active'
-  )
-);
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Partners can upload relationship photos`
+   - **Policy command**: `INSERT`
+   - **WITH CHECK expression**:
+   ```sql
+   bucket_id = 'relationship-photos' AND EXISTS (
+     SELECT 1 FROM relationships r
+     WHERE r.id::text = (storage.foldername(name))[1]
+       AND (r.partner_a_id = auth.uid() OR r.partner_b_id = auth.uid())
+       AND r.status = 'active'
+   )
+   ```
+3. Click "Review" then "Save policy"
 
 #### Policy 2: Partners can delete relationship photos
-```sql
-CREATE POLICY "Partners can delete relationship photos"
-ON storage.objects FOR DELETE
-USING (
-  bucket_id = 'relationship-photos'
-  AND EXISTS (
-    SELECT 1 FROM relationships r
-    WHERE r.id::text = (storage.foldername(name))[1]
-      AND (r.partner_a_id = auth.uid() OR r.partner_b_id = auth.uid())
-  )
-);
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Partners can delete relationship photos`
+   - **Policy command**: `DELETE`
+   - **USING expression**:
+   ```sql
+   bucket_id = 'relationship-photos' AND EXISTS (
+     SELECT 1 FROM relationships r
+     WHERE r.id::text = (storage.foldername(name))[1]
+       AND (r.partner_a_id = auth.uid() OR r.partner_b_id = auth.uid())
+   )
+   ```
+3. Click "Review" then "Save policy"
 
 #### Policy 3: Anyone can view relationship photos
-```sql
-CREATE POLICY "Anyone can view relationship photos"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'relationship-photos');
-```
+1. Click "New Policy" → "For full customization create a policy from scratch"
+2. Fill in:
+   - **Policy name**: `Anyone can view relationship photos`
+   - **Policy command**: `SELECT`
+   - **USING expression**:
+   ```sql
+   bucket_id = 'relationship-photos'
+   ```
+3. Click "Review" then "Save policy"
 
 ## Step 3: Verify Setup
 
