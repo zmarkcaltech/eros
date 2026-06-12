@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import ProfileForm from './ProfileForm'
 
 interface Profile {
   id: string
   full_name: string
   preferred_name: string | null
+  avatar_url: string | null
 }
 
 interface Relationship {
@@ -368,12 +370,36 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex ${
+                    className={`flex gap-2 ${
                       msg.sender_type === 'partner_a' ? 'justify-end' : 'justify-start'
                     }`}
                   >
+                    {/* Avatar - left side for others */}
+                    {msg.sender_type !== 'partner_a' && (
+                      <div className="flex-shrink-0">
+                        {msg.sender_type === 'ai' ? (
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                            AI
+                          </div>
+                        ) : selectedRelationship.partner_b.avatar_url ? (
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                            <Image
+                              src={selectedRelationship.partner_b.avatar_url}
+                              alt={partnerBName}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white text-xs font-bold">
+                            {partnerBName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div
-                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                      className={`max-w-[75%] rounded-lg px-4 py-2 ${
                         msg.sender_type === 'partner_a'
                           ? 'bg-purple-600 text-white'
                           : msg.sender_type === 'ai'
@@ -386,6 +412,26 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                       </p>
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
+
+                    {/* Avatar - right side for current user */}
+                    {msg.sender_type === 'partner_a' && (
+                      <div className="flex-shrink-0">
+                        {selectedRelationship.partner_a.avatar_url ? (
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                            <Image
+                              src={selectedRelationship.partner_a.avatar_url}
+                              alt={partnerAName}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                            {partnerAName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div ref={messagesEndRefA} />
@@ -431,12 +477,36 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex ${
+                    className={`flex gap-2 ${
                       msg.sender_type === 'partner_b' ? 'justify-end' : 'justify-start'
                     }`}
                   >
+                    {/* Avatar - left side for others */}
+                    {msg.sender_type !== 'partner_b' && (
+                      <div className="flex-shrink-0">
+                        {msg.sender_type === 'ai' ? (
+                          <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                            AI
+                          </div>
+                        ) : selectedRelationship.partner_a.avatar_url ? (
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                            <Image
+                              src={selectedRelationship.partner_a.avatar_url}
+                              alt={partnerAName}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                            {partnerAName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div
-                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                      className={`max-w-[75%] rounded-lg px-4 py-2 ${
                         msg.sender_type === 'partner_b'
                           ? 'bg-pink-600 text-white'
                           : msg.sender_type === 'ai'
@@ -449,6 +519,26 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                       </p>
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
+
+                    {/* Avatar - right side for current user */}
+                    {msg.sender_type === 'partner_b' && (
+                      <div className="flex-shrink-0">
+                        {selectedRelationship.partner_b.avatar_url ? (
+                          <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                            <Image
+                              src={selectedRelationship.partner_b.avatar_url}
+                              alt={partnerBName}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white text-xs font-bold">
+                            {partnerBName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
                 <div ref={messagesEndRefB} />

@@ -17,8 +17,8 @@ export default async function ChatSimulatorPage() {
     .from('relationships')
     .select(`
       *,
-      partner_a:profiles!relationships_partner_a_id_fkey(id, full_name, preferred_name),
-      partner_b:profiles!relationships_partner_b_id_fkey(id, full_name, preferred_name)
+      partner_a:profiles!relationships_partner_a_id_fkey(id, full_name, preferred_name, avatar_url),
+      partner_b:profiles!relationships_partner_b_id_fkey(id, full_name, preferred_name, avatar_url)
     `)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
