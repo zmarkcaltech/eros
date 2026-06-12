@@ -104,6 +104,7 @@ Return ONLY the message text, nothing else.`
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
+      temperature: 1.0,
       messages: [{
         role: 'user',
         content: prompt
@@ -115,8 +116,9 @@ Return ONLY the message text, nothing else.`
     return NextResponse.json({ message: messageText })
   } catch (error) {
     console.error('Error generating partner message:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to generate message' },
+      { error: `Failed to generate message: ${errorMessage}` },
       { status: 500 }
     )
   }

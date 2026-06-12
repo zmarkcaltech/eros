@@ -169,8 +169,10 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error creating test relationship:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('Full error details:', errorMessage)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create test relationship' },
+      { error: `Failed to create test relationship: ${errorMessage}` },
       { status: 500 }
     )
   }
