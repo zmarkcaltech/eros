@@ -271,8 +271,8 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
     }
   }
 
-  const partnerAName = selectedRelationship?.partner_a.preferred_name || selectedRelationship?.partner_a.full_name
-  const partnerBName = selectedRelationship?.partner_b.preferred_name || selectedRelationship?.partner_b.full_name
+  const partnerAName = selectedRelationship?.partner_a.preferred_name || selectedRelationship?.partner_a.full_name || 'Partner A'
+  const partnerBName = selectedRelationship?.partner_b.preferred_name || selectedRelationship?.partner_b.full_name || 'Partner B'
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
@@ -384,7 +384,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                         ) : selectedRelationship.partner_b.avatar_url ? (
                           <div className="relative w-8 h-8 rounded-full overflow-hidden">
                             <Image
-                              src={selectedRelationship.partner_b.avatar_url}
+                              src={selectedRelationship.partner_b.avatar_url!}
                               alt={partnerBName}
                               fill
                               className="object-cover"
@@ -419,7 +419,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                         {selectedRelationship.partner_a.avatar_url ? (
                           <div className="relative w-8 h-8 rounded-full overflow-hidden">
                             <Image
-                              src={selectedRelationship.partner_a.avatar_url}
+                              src={selectedRelationship.partner_a.avatar_url!}
                               alt={partnerAName}
                               fill
                               className="object-cover"
@@ -491,7 +491,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                         ) : selectedRelationship.partner_a.avatar_url ? (
                           <div className="relative w-8 h-8 rounded-full overflow-hidden">
                             <Image
-                              src={selectedRelationship.partner_a.avatar_url}
+                              src={selectedRelationship.partner_a.avatar_url!}
                               alt={partnerAName}
                               fill
                               className="object-cover"
@@ -526,7 +526,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                         {selectedRelationship.partner_b.avatar_url ? (
                           <div className="relative w-8 h-8 rounded-full overflow-hidden">
                             <Image
-                              src={selectedRelationship.partner_b.avatar_url}
+                              src={selectedRelationship.partner_b.avatar_url!}
                               alt={partnerBName}
                               fill
                               className="object-cover"

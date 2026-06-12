@@ -141,7 +141,7 @@ export default function PersistentChat({
                     {avatar ? (
                       <div className="relative w-8 h-8 rounded-full overflow-hidden">
                         <Image
-                          src={avatar}
+                          src={avatar!}
                           alt={name}
                           fill
                           className="object-cover"
@@ -178,7 +178,7 @@ export default function PersistentChat({
                     {avatar ? (
                       <div className="relative w-8 h-8 rounded-full overflow-hidden">
                         <Image
-                          src={avatar}
+                          src={avatar!}
                           alt={name}
                           fill
                           className="object-cover"

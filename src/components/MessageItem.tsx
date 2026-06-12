@@ -31,7 +31,7 @@ export function MessageItem({ message, isCurrentUser, senderName, senderAvatar }
           ) : senderAvatar ? (
             <div className="relative w-10 h-10 rounded-full overflow-hidden">
               <Image
-                src={senderAvatar}
+                src={senderAvatar!}
                 alt={senderName}
                 fill
                 className="object-cover"
@@ -83,7 +83,7 @@ export function MessageItem({ message, isCurrentUser, senderName, senderAvatar }
           {senderAvatar ? (
             <div className="relative w-10 h-10 rounded-full overflow-hidden">
               <Image
-                src={senderAvatar}
+                src={senderAvatar!}
                 alt={senderName}
                 fill
                 className="object-cover"
