@@ -1,9 +1,72 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function POST() {
+interface PartnerProfile {
+  fullName: string
+  preferredName: string
+  age: number
+  pronouns: string
+  occupation: string
+  selfDescription: string
+  interests: string
+}
+
+interface RelationshipInfo {
+  durationMonths: number
+  description: string
+  goals: string
+  howWeMet: string
+  livingSituation: string
+}
+
+export async function POST(request: NextRequest) {
   try {
+    const body = await request.json()
+    const {
+      partnerA,
+      partnerB,
+      relationship
+    }: {
+      partnerA?: PartnerProfile
+      partnerB?: PartnerProfile
+      relationship?: RelationshipInfo
+    } = body
+
     const supabase = await createClient()
+
+    // Default profiles
+    const defaultPartnerA: PartnerProfile = {
+      fullName: 'Alex Test',
+      preferredName: 'Alex',
+      age: 28,
+      pronouns: 'they/them',
+      occupation: 'Software Engineer',
+      selfDescription: 'I value clear communication and quality time together. Sometimes I get overwhelmed with work stress.',
+      interests: 'Hiking, cooking, reading sci-fi'
+    }
+
+    const defaultPartnerB: PartnerProfile = {
+      fullName: 'Jordan Test',
+      preferredName: 'Jordan',
+      age: 30,
+      pronouns: 'she/her',
+      occupation: 'Graphic Designer',
+      selfDescription: 'I\'m creative and emotional. I need verbal affirmation and struggle when I feel unheard.',
+      interests: 'Art, yoga, traveling'
+    }
+
+    const defaultRelationship: RelationshipInfo = {
+      durationMonths: 24,
+      description: 'We met at a coffee shop and have been together for 2 years. We love spending time together but sometimes struggle with communication during stressful times.',
+      goals: 'Improve our communication patterns, learn to handle conflict better, and reconnect emotionally.',
+      howWeMet: 'At a local coffee shop - we both reached for the last blueberry muffin',
+      livingSituation: 'Living together in a one-bedroom apartment'
+    }
+
+    // Merge with defaults
+    const profileA = { ...defaultPartnerA, ...partnerA }
+    const profileB = { ...defaultPartnerB, ...partnerB }
+    const relationshipInfo = { ...defaultRelationship, ...relationship }
 
     // Create two test users
     const timestamp = Date.now()
@@ -17,8 +80,8 @@ export async function POST() {
       password: password,
       options: {
         data: {
-          full_name: 'Alex Test',
-          preferred_name: 'Alex'
+          full_name: profileA.fullName,
+          preferred_name: profileA.preferredName
         }
       }
     })
@@ -33,8 +96,8 @@ export async function POST() {
       password: password,
       options: {
         data: {
-          full_name: 'Jordan Test',
-          preferred_name: 'Jordan'
+          full_name: profileB.fullName,
+          preferred_name: profileB.preferredName
         }
       }
     })
@@ -43,54 +106,54 @@ export async function POST() {
       throw new Error(`Failed to create Partner B: ${errorB?.message}`)
     }
 
-    // Update profiles with more details
+    // Update profiles with detailed information
     await supabase
       .from('profiles')
       .update({
-        age: 28,
-        pronouns: 'they/them',
-        occupation: 'Software Engineer',
-        self_description: 'I value clear communication and quality time together. Sometimes I get overwhelmed with work stress.',
-        interests: 'Hiking, cooking, reading sci-fi'
+        age: profileA.age,
+        pronouns: profileA.pronouns,
+        occupation: profileA.occupation,
+        self_description: profileA.selfDescription,
+        interests: profileA.interests
       })
       .eq('id', userA.user.id)
 
     await supabase
       .from('profiles')
       .update({
-        age: 30,
-        pronouns: 'she/her',
-        occupation: 'Graphic Designer',
-        self_description: 'I\'m creative and emotional. I need verbal affirmation and struggle when I feel unheard.',
-        interests: 'Art, yoga, traveling'
+        age: profileB.age,
+        pronouns: profileB.pronouns,
+        occupation: profileB.occupation,
+        self_description: profileB.selfDescription,
+        interests: profileB.interests
       })
       .eq('id', userB.user.id)
 
     // Create relationship
     const linkCode = Math.random().toString(36).substring(2, 8).toUpperCase()
 
-    const { data: relationship, error: relError } = await supabase
+    const { data: rel, error: relError } = await supabase
       .from('relationships')
       .insert({
         partner_a_id: userA.user.id,
         partner_b_id: userB.user.id,
         status: 'active',
         link_code: linkCode,
-        duration_months: 24,
-        relationship_description: 'We met at a coffee shop and have been together for 2 years. We love spending time together but sometimes struggle with communication during stressful times.',
-        relationship_goals: 'Improve our communication patterns, learn to handle conflict better, and reconnect emotionally.',
-        how_we_met: 'At a local coffee shop - we both reached for the last blueberry muffin',
-        living_situation: 'Living together in a one-bedroom apartment'
+        duration_months: relationshipInfo.durationMonths,
+        relationship_description: relationshipInfo.description,
+        relationship_goals: relationshipInfo.goals,
+        how_we_met: relationshipInfo.howWeMet,
+        living_situation: relationshipInfo.livingSituation
       })
       .select()
       .single()
 
-    if (relError || !relationship) {
+    if (relError || !rel) {
       throw new Error(`Failed to create relationship: ${relError?.message}`)
     }
 
     return NextResponse.json({
-      relationship,
+      relationship: rel,
       credentials: {
         partnerA: { email: emailA, password },
         partnerB: { email: emailB, password }

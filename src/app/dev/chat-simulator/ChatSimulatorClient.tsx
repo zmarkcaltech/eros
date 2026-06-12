@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import ProfileForm from './ProfileForm'
 
 interface Profile {
   id: string
@@ -216,17 +217,26 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
     }
   }
 
-  const createTestRelationship = async () => {
+  const createTestRelationship = async (
+    partnerA?: any,
+    partnerB?: any,
+    relationship?: any
+  ) => {
     setIsCreatingRelationship(true)
     try {
       const response = await fetch('/api/dev/create-test-relationship', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerA,
+          partnerB,
+          relationship
+        })
       })
 
       if (!response.ok) throw new Error('Failed to create test relationship')
 
-      const { relationship } = await response.json()
+      const { relationship: rel } = await response.json()
 
       // Refresh the page to load new relationship
       router.refresh()
@@ -273,41 +283,48 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
 
         {/* Controls */}
         <div className="bg-gray-800 rounded-lg p-6 mb-6 space-y-4">
-          <div className="flex gap-4 items-center flex-wrap">
-            <div className="flex-1 min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Select Relationship
-              </label>
-              <select
-                value={selectedRelationship?.id || ''}
-                onChange={(e) => {
-                  const rel = relationships.find(r => r.id === e.target.value)
-                  setSelectedRelationship(rel || null)
-                  setMessages([])
-                }}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
-              >
-                {relationships.map((rel) => (
-                  <option key={rel.id} value={rel.id}>
-                    {rel.partner_a.preferred_name || rel.partner_a.full_name} & {rel.partner_b.preferred_name || rel.partner_b.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={createTestRelationship}
-              disabled={isCreatingRelationship}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-semibold transition-colors mt-auto"
-            >
-              {isCreatingRelationship ? 'Creating...' : 'Create Test Relationship'}
-            </button>
-            <button
-              onClick={clearChat}
-              className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors mt-auto"
-            >
-              Clear Chat
-            </button>
+          {/* Create Relationship Section */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-200 mb-3">Create Test Relationship</h3>
+            <ProfileForm
+              onSubmit={(partnerA, partnerB, relationship) =>
+                createTestRelationship(partnerA, partnerB, relationship)
+              }
+              isCreating={isCreatingRelationship}
+            />
           </div>
+
+          {/* Relationship Selector */}
+          {relationships.length > 0 && (
+            <div className="flex gap-4 items-center flex-wrap pt-4 border-t border-gray-700">
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Select Existing Relationship
+                </label>
+                <select
+                  value={selectedRelationship?.id || ''}
+                  onChange={(e) => {
+                    const rel = relationships.find(r => r.id === e.target.value)
+                    setSelectedRelationship(rel || null)
+                    setMessages([])
+                  }}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-purple-500"
+                >
+                  {relationships.map((rel) => (
+                    <option key={rel.id} value={rel.id}>
+                      {rel.partner_a.preferred_name || rel.partner_a.full_name} & {rel.partner_b.preferred_name || rel.partner_b.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={clearChat}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors mt-auto"
+              >
+                Clear Chat
+              </button>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -467,14 +484,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
           </div>
         ) : (
           <div className="bg-gray-800 rounded-lg p-12 text-center">
-            <p className="text-gray-400 text-lg mb-4">No relationships found</p>
-            <button
-              onClick={createTestRelationship}
-              disabled={isCreatingRelationship}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg font-semibold transition-colors"
-            >
-              {isCreatingRelationship ? 'Creating...' : 'Create Test Relationship'}
-            </button>
+            <p className="text-gray-400 text-lg">No relationships found. Create one above to start testing.</p>
           </div>
         )}
       </div>
