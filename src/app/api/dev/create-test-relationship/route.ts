@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface PartnerProfile {
@@ -32,7 +32,17 @@ export async function POST(request: NextRequest) {
       relationship?: RelationshipInfo
     } = body
 
-    const supabase = await createClient()
+    // Use service role to bypass RLS for dev testing
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
 
     // Default profiles
     const defaultPartnerA: PartnerProfile = {
@@ -74,15 +84,14 @@ export async function POST(request: NextRequest) {
     const emailB = `test-partner-b-${timestamp}@example.com`
     const password = 'TestPassword123!'
 
-    // Sign up Partner A
-    const { data: userA, error: errorA } = await supabase.auth.signUp({
+    // Create Partner A using admin API
+    const { data: userA, error: errorA } = await supabase.auth.admin.createUser({
       email: emailA,
       password: password,
-      options: {
-        data: {
-          full_name: profileA.fullName,
-          preferred_name: profileA.preferredName
-        }
+      email_confirm: true,
+      user_metadata: {
+        full_name: profileA.fullName,
+        preferred_name: profileA.preferredName
       }
     })
 
@@ -90,15 +99,14 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to create Partner A: ${errorA?.message}`)
     }
 
-    // Sign up Partner B
-    const { data: userB, error: errorB } = await supabase.auth.signUp({
+    // Create Partner B using admin API
+    const { data: userB, error: errorB } = await supabase.auth.admin.createUser({
       email: emailB,
       password: password,
-      options: {
-        data: {
-          full_name: profileB.fullName,
-          preferred_name: profileB.preferredName
-        }
+      email_confirm: true,
+      user_metadata: {
+        full_name: profileB.fullName,
+        preferred_name: profileB.preferredName
       }
     })
 
