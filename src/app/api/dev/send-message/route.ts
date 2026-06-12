@@ -70,6 +70,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Trigger AI response generation (fire-and-forget) - same as real app
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    fetch(`${appUrl}/api/agent/respond`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ relationship_id: relationshipId })
+    }).catch(err => console.error('Failed to trigger AI response:', err))
+
     return NextResponse.json({ message })
   } catch (error) {
     console.error('Error sending message:', error)
