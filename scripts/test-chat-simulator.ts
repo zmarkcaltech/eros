@@ -24,12 +24,33 @@ if (!supabaseUrl || !supabaseAnonKey || !anthropicApiKey) {
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 const anthropic = new Anthropic({ apiKey: anthropicApiKey })
 
+interface PartnerProfile {
+  fullName: string
+  preferredName: string
+  age: number
+  pronouns: string
+  occupation: string
+  selfDescription: string
+  interests: string
+}
+
+interface RelationshipInfo {
+  durationMonths: number
+  description: string
+  goals: string
+  howWeMet: string
+  livingSituation: string
+}
+
 interface TestConfig {
   scenario?: string
   turns: number
   relationshipId?: string
   createNew: boolean
   verbose: boolean
+  partnerA?: Partial<PartnerProfile>
+  partnerB?: Partial<PartnerProfile>
+  relationship?: Partial<RelationshipInfo>
 }
 
 interface Message {
@@ -44,7 +65,10 @@ async function parseArgs(): Promise<TestConfig> {
   const config: TestConfig = {
     turns: 6,
     createNew: true,
-    verbose: true
+    verbose: true,
+    partnerA: {},
+    partnerB: {},
+    relationship: {}
   }
 
   for (let i = 0; i < args.length; i++) {
@@ -62,6 +86,38 @@ async function parseArgs(): Promise<TestConfig> {
       case '--quiet':
         config.verbose = false
         break
+      // Partner A customization
+      case '--partner-a-name':
+        config.partnerA!.fullName = args[++i]
+        config.partnerA!.preferredName = args[i]
+        break
+      case '--partner-a-age':
+        config.partnerA!.age = parseInt(args[++i], 10)
+        break
+      case '--partner-a-pronouns':
+        config.partnerA!.pronouns = args[++i]
+        break
+      case '--partner-a-occupation':
+        config.partnerA!.occupation = args[++i]
+        break
+      // Partner B customization
+      case '--partner-b-name':
+        config.partnerB!.fullName = args[++i]
+        config.partnerB!.preferredName = args[i]
+        break
+      case '--partner-b-age':
+        config.partnerB!.age = parseInt(args[++i], 10)
+        break
+      case '--partner-b-pronouns':
+        config.partnerB!.pronouns = args[++i]
+        break
+      case '--partner-b-occupation':
+        config.partnerB!.occupation = args[++i]
+        break
+      // Relationship customization
+      case '--relationship-duration':
+        config.relationship!.durationMonths = parseInt(args[++i], 10)
+        break
       case '--help':
         console.log(`
 Chat Simulator CLI
@@ -70,16 +126,33 @@ Usage:
   npx tsx scripts/test-chat-simulator.ts [options]
 
 Options:
-  --scenario <text>         Conflict/scenario to simulate
-  --turns <number>          Number of turns (default: 6)
-  --relationship-id <uuid>  Use existing relationship instead of creating new one
-  --quiet                   Minimal output
-  --help                    Show this help
+  --scenario <text>           Conflict/scenario to simulate
+  --turns <number>            Number of turns (default: 6)
+  --relationship-id <uuid>    Use existing relationship instead of creating new one
+  --quiet                     Minimal output
+
+  Partner A Customization (optional, uses defaults if not specified):
+  --partner-a-name <name>      Partner A's name
+  --partner-a-age <number>     Partner A's age
+  --partner-a-pronouns <text>  Partner A's pronouns
+  --partner-a-occupation <text> Partner A's occupation
+
+  Partner B Customization (optional, uses defaults if not specified):
+  --partner-b-name <name>      Partner B's name
+  --partner-b-age <number>     Partner B's age
+  --partner-b-pronouns <text>  Partner B's pronouns
+  --partner-b-occupation <text> Partner B's occupation
+
+  Relationship Customization (optional):
+  --relationship-duration <months> How long they've been together
+
+  --help                      Show this help
 
 Examples:
   npx tsx scripts/test-chat-simulator.ts
   npx tsx scripts/test-chat-simulator.ts --scenario "Disagreement about household chores" --turns 8
   npx tsx scripts/test-chat-simulator.ts --relationship-id abc-123-def --turns 10
+  npx tsx scripts/test-chat-simulator.ts --partner-a-name "Sam" --partner-a-age 35 --partner-b-name "Taylor" --turns 8
         `)
         process.exit(0)
     }
@@ -88,13 +161,86 @@ Examples:
   return config
 }
 
-async function createTestRelationship() {
+async function createTestRelationship(
+  partnerA?: Partial<PartnerProfile>,
+  partnerB?: Partial<PartnerProfile>,
+  relationship?: Partial<RelationshipInfo>
+) {
   console.log('📝 Creating test relationship...')
 
+  // Use an HTTP request to the API instead of direct Supabase calls
+  // This reuses the same endpoint as the web interface
+  const response = await fetch(`${supabaseUrl.replace('/v1', '')}/functions/v1/create-test-relationship`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${supabaseAnonKey}`
+    },
+    body: JSON.stringify({
+      partnerA,
+      partnerB,
+      relationship
+    })
+  })
+
+  if (!response.ok) {
+    // Fall back to direct creation if API isn't available
+    console.log('⚠️  API not available, using direct creation...')
+    return await createTestRelationshipDirect(partnerA, partnerB, relationship)
+  }
+
+  const data = await response.json()
+
+  console.log(`✅ Created relationship: ${data.relationship.id}`)
+  console.log(`   Partner A: ${data.relationship.partner_a?.preferred_name || 'Unknown'}`)
+  console.log(`   Partner B: ${data.relationship.partner_b?.preferred_name || 'Unknown'}`)
+
+  return data.relationship
+}
+
+async function createTestRelationshipDirect(
+  partnerACustom?: Partial<PartnerProfile>,
+  partnerBCustom?: Partial<PartnerProfile>,
+  relationshipCustom?: Partial<RelationshipInfo>
+) {
   const timestamp = Date.now()
   const emailA = `cli-test-a-${timestamp}@example.com`
   const emailB = `cli-test-b-${timestamp}@example.com`
   const password = 'TestPassword123!'
+
+  // Defaults
+  const defaultPartnerA = {
+    fullName: 'Alex CLI',
+    preferredName: 'Alex',
+    age: 28,
+    pronouns: 'they/them',
+    occupation: 'Software Engineer',
+    selfDescription: 'I value clear communication. Sometimes I get overwhelmed with work stress.',
+    interests: 'Hiking, cooking, reading'
+  }
+
+  const defaultPartnerB = {
+    fullName: 'Jordan CLI',
+    preferredName: 'Jordan',
+    age: 30,
+    pronouns: 'she/her',
+    occupation: 'Graphic Designer',
+    selfDescription: 'I\'m creative and emotional. I need verbal affirmation.',
+    interests: 'Art, yoga, traveling'
+  }
+
+  const defaultRelationship = {
+    durationMonths: 24,
+    description: 'Test relationship for CLI simulation',
+    goals: 'Improve communication and conflict resolution',
+    howWeMet: 'At a local coffee shop',
+    livingSituation: 'Living together'
+  }
+
+  // Merge with custom values
+  const partnerA = { ...defaultPartnerA, ...partnerACustom }
+  const partnerB = { ...defaultPartnerB, ...partnerBCustom }
+  const relationshipInfo = { ...defaultRelationship, ...relationshipCustom }
 
   // Create Partner A
   const { data: userA, error: errorA } = await supabase.auth.signUp({
@@ -120,26 +266,26 @@ async function createTestRelationship() {
   await supabase
     .from('profiles')
     .update({
-      full_name: 'Alex CLI',
-      preferred_name: 'Alex',
-      age: 28,
-      pronouns: 'they/them',
-      occupation: 'Software Engineer',
-      self_description: 'I value clear communication. Sometimes I get overwhelmed with work stress.',
-      interests: 'Hiking, cooking, reading'
+      full_name: partnerA.fullName,
+      preferred_name: partnerA.preferredName,
+      age: partnerA.age,
+      pronouns: partnerA.pronouns,
+      occupation: partnerA.occupation,
+      self_description: partnerA.selfDescription,
+      interests: partnerA.interests
     })
     .eq('id', userA.user.id)
 
   await supabase
     .from('profiles')
     .update({
-      full_name: 'Jordan CLI',
-      preferred_name: 'Jordan',
-      age: 30,
-      pronouns: 'she/her',
-      occupation: 'Graphic Designer',
-      self_description: 'I\'m creative and emotional. I need verbal affirmation.',
-      interests: 'Art, yoga, traveling'
+      full_name: partnerB.fullName,
+      preferred_name: partnerB.preferredName,
+      age: partnerB.age,
+      pronouns: partnerB.pronouns,
+      occupation: partnerB.occupation,
+      self_description: partnerB.selfDescription,
+      interests: partnerB.interests
     })
     .eq('id', userB.user.id)
 
@@ -153,9 +299,11 @@ async function createTestRelationship() {
       partner_b_id: userB.user.id,
       status: 'active',
       link_code: linkCode,
-      duration_months: 24,
-      relationship_description: 'Test relationship for CLI simulation',
-      relationship_goals: 'Improve communication and conflict resolution'
+      duration_months: relationshipInfo.durationMonths,
+      relationship_description: relationshipInfo.description,
+      relationship_goals: relationshipInfo.goals,
+      how_we_met: relationshipInfo.howWeMet,
+      living_situation: relationshipInfo.livingSituation
     })
     .select(`
       *,
@@ -169,8 +317,8 @@ async function createTestRelationship() {
   }
 
   console.log(`✅ Created relationship: ${relationship.id}`)
-  console.log(`   Partner A: ${relationship.partner_a.preferred_name} (${emailA})`)
-  console.log(`   Partner B: ${relationship.partner_b.preferred_name} (${emailB})`)
+  console.log(`   Partner A: ${relationship.partner_a.preferred_name}`)
+  console.log(`   Partner B: ${relationship.partner_b.preferred_name}`)
 
   return relationship
 }
@@ -349,7 +497,7 @@ async function runSimulation(config: TestConfig) {
   // Get or create relationship
   const relationship = config.relationshipId
     ? await getRelationship(config.relationshipId)
-    : await createTestRelationship()
+    : await createTestRelationship(config.partnerA, config.partnerB, config.relationship)
 
   const partnerAName = relationship.partner_a.preferred_name || relationship.partner_a.full_name
   const partnerBName = relationship.partner_b.preferred_name || relationship.partner_b.full_name
