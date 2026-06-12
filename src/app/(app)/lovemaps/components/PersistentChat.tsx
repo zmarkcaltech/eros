@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Image from 'next/image'
 
 interface ChatMessage {
   id: string
@@ -15,13 +16,17 @@ interface Props {
   userRole: 'partner_a' | 'partner_b'
   yourName: string
   partnerName: string
+  yourAvatar: string | null
+  partnerAvatar: string | null
 }
 
 export default function PersistentChat({
   relationshipId,
   userRole,
   yourName,
-  partnerName
+  partnerName,
+  yourAvatar,
+  partnerAvatar
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -123,12 +128,34 @@ export default function PersistentChat({
         ) : (
           messages.map((msg) => {
             const isYou = msg.sender_type === userRole
+            const avatar = isYou ? yourAvatar : partnerAvatar
+            const name = isYou ? yourName : partnerName
             return (
               <div
                 key={msg.id}
-                className={`flex ${isYou ? 'justify-end' : 'justify-start'}`}
+                className={`flex gap-2 ${isYou ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[85%] ${isYou ? 'order-2' : 'order-1'}`}>
+                {/* Avatar on left for partner */}
+                {!isYou && (
+                  <div className="flex-shrink-0">
+                    {avatar ? (
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                        <Image
+                          src={avatar}
+                          alt={name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold">
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className={`max-w-[75%]`}>
                   <div className="text-xs text-gray-500 mb-1 px-2">
                     {isYou ? 'You' : partnerName}
                   </div>
@@ -144,6 +171,26 @@ export default function PersistentChat({
                     {msg.content}
                   </div>
                 </div>
+
+                {/* Avatar on right for you */}
+                {isYou && (
+                  <div className="flex-shrink-0">
+                    {avatar ? (
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                        <Image
+                          src={avatar}
+                          alt={name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           })

@@ -22,8 +22,8 @@ interface Relationship {
   status: string
   partner_a_id: string
   partner_b_id: string
-  partner_a: { full_name: string; preferred_name: string | null }
-  partner_b: { full_name: string; preferred_name: string | null }
+  partner_a: { full_name: string; preferred_name: string | null; avatar_url: string | null }
+  partner_b: { full_name: string; preferred_name: string | null; avatar_url: string | null }
 }
 
 export default function ChatPage() {
@@ -56,8 +56,8 @@ export default function ChatPage() {
           .from('relationships')
           .select(`
             *,
-            partner_a:profiles!relationships_partner_a_id_fkey(full_name, preferred_name),
-            partner_b:profiles!relationships_partner_b_id_fkey(full_name, preferred_name)
+            partner_a:profiles!relationships_partner_a_id_fkey(full_name, preferred_name, avatar_url),
+            partner_b:profiles!relationships_partner_b_id_fkey(full_name, preferred_name, avatar_url)
           `)
           .or(`partner_a_id.eq.${user.id},partner_b_id.eq.${user.id}`)
           .eq('status', 'active')
@@ -252,6 +252,8 @@ export default function ChatPage() {
           partnerBId={relationship.partner_b_id}
           partnerAName={partnerAName}
           partnerBName={partnerBName}
+          partnerAAvatar={relationship.partner_a.avatar_url}
+          partnerBAvatar={relationship.partner_b.avatar_url}
           isAITyping={isAITyping}
         />
 

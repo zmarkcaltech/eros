@@ -36,8 +36,8 @@ export default async function TerritoryPage({
     .from('relationships')
     .select(`
       *,
-      partner_a:profiles!relationships_partner_a_id_fkey(full_name, preferred_name),
-      partner_b:profiles!relationships_partner_b_id_fkey(full_name, preferred_name)
+      partner_a:profiles!relationships_partner_a_id_fkey(full_name, preferred_name, avatar_url),
+      partner_b:profiles!relationships_partner_b_id_fkey(full_name, preferred_name, avatar_url)
     `)
     .or(`partner_a_id.eq.${user.id},partner_b_id.eq.${user.id}`)
     .eq('status', 'active')
@@ -55,6 +55,8 @@ export default async function TerritoryPage({
   const partnerBName = partnerB.preferred_name || partnerB.full_name
   const yourName = userRole === 'partner_a' ? partnerAName : partnerBName
   const partnerName = userRole === 'partner_a' ? partnerBName : partnerAName
+  const yourAvatar = userRole === 'partner_a' ? partnerA.avatar_url : partnerB.avatar_url
+  const partnerAvatar = userRole === 'partner_a' ? partnerB.avatar_url : partnerA.avatar_url
 
   // Fetch territory progress
   const { data: progress } = await supabase
@@ -132,6 +134,8 @@ export default async function TerritoryPage({
       userRole={userRole}
       yourName={yourName}
       partnerName={partnerName}
+      yourAvatar={yourAvatar}
+      partnerAvatar={partnerAvatar}
     />
   )
 }

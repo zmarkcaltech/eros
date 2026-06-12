@@ -62,6 +62,8 @@ interface Props {
   userRole: UserRole
   yourName: string
   partnerName: string
+  yourAvatar: string | null
+  partnerAvatar: string | null
 }
 
 export default function TerritoryQuestionClient({
@@ -73,7 +75,9 @@ export default function TerritoryQuestionClient({
   relationshipId,
   userRole,
   yourName,
-  partnerName
+  partnerName,
+  yourAvatar,
+  partnerAvatar
 }: Props) {
   const router = useRouter()
   const [territory, setTerritory] = useState(initialTerritory)
@@ -617,6 +621,8 @@ export default function TerritoryQuestionClient({
             userRole={userRole}
             yourName={yourName}
             partnerName={partnerName}
+            yourAvatar={yourAvatar}
+            partnerAvatar={partnerAvatar}
           />
         </div>
       </div>

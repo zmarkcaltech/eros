@@ -22,6 +22,8 @@ interface MessageListProps {
   partnerBId: string
   partnerAName: string
   partnerBName: string
+  partnerAAvatar: string | null
+  partnerBAvatar: string | null
   isAITyping: boolean
 }
 
@@ -32,6 +34,8 @@ export function MessageList({
   partnerBId,
   partnerAName,
   partnerBName,
+  partnerAAvatar,
+  partnerBAvatar,
   isAITyping
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -46,6 +50,13 @@ export function MessageList({
     if (message.sender_id === partnerAId) return partnerAName
     if (message.sender_id === partnerBId) return partnerBName
     return 'Unknown'
+  }
+
+  const getSenderAvatar = (message: Message) => {
+    if (message.sender_type === 'ai') return null
+    if (message.sender_id === partnerAId) return partnerAAvatar
+    if (message.sender_id === partnerBId) return partnerBAvatar
+    return null
   }
 
   return (
@@ -65,6 +76,7 @@ export function MessageList({
               message={message}
               isCurrentUser={message.sender_id === currentUserId}
               senderName={getSenderName(message)}
+              senderAvatar={getSenderAvatar(message)}
             />
           ))}
 
