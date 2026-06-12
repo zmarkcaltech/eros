@@ -34,12 +34,13 @@ interface Props {
   currentUserId: string
 }
 
-export default function ChatSimulatorClient({ relationships, currentUserId }: Props) {
+export default function ChatSimulatorClient({ relationships: initialRelationships, currentUserId }: Props) {
   const router = useRouter()
   const supabase = createClient()
 
+  const [relationships, setRelationships] = useState<Relationship[]>(initialRelationships)
   const [selectedRelationship, setSelectedRelationship] = useState<Relationship | null>(
-    relationships[0] || null
+    initialRelationships[0] || null
   )
   const [messages, setMessages] = useState<Message[]>([])
   const [messageA, setMessageA] = useState('')
@@ -151,9 +152,13 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
         })
       })
 
-      if (!response.ok) throw new Error('Failed to generate message')
+      const data = await response.json()
 
-      const { message } = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate message')
+      }
+
+      const { message } = data
 
       // Set the generated message in the input
       if (asPartner === 'partner_a') {
@@ -165,7 +170,8 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
       setSimulationStatus('')
     } catch (error) {
       console.error('Error generating AI message:', error)
-      alert('Failed to generate AI message')
+      const errorMsg = error instanceof Error ? error.message : 'Failed to generate AI message'
+      alert(errorMsg)
       setSimulationStatus('')
     }
   }
@@ -197,9 +203,13 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
           })
         })
 
-        if (!response.ok) throw new Error('Failed to generate message')
+        const data = await response.json()
 
-        const { message } = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to generate message')
+        }
+
+        const { message } = data
 
         // Send the message
         await sendMessage(partner, message)
@@ -212,7 +222,8 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
       setTimeout(() => setSimulationStatus(''), 3000)
     } catch (error) {
       console.error('Error during simulation:', error)
-      alert('Simulation failed')
+      const errorMsg = error instanceof Error ? error.message : 'Simulation failed'
+      alert(errorMsg)
       setSimulationStatus('')
     } finally {
       setIsSimulating(false)
@@ -236,16 +247,38 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
         })
       })
 
-      if (!response.ok) throw new Error('Failed to create test relationship')
+      const data = await response.json()
 
-      const { relationship: rel } = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create test relationship')
+      }
 
-      // Refresh the page to load new relationship
-      router.refresh()
-      alert('Test relationship created! Refreshing...')
+      const { relationship: rel } = data
+
+      // Fetch the full relationship with profiles
+      const { data: newRelationship } = await supabase
+        .from('relationships')
+        .select(`
+          *,
+          partner_a:profiles!relationships_partner_a_id_fkey(id, full_name, preferred_name, avatar_url),
+          partner_b:profiles!relationships_partner_b_id_fkey(id, full_name, preferred_name, avatar_url)
+        `)
+        .eq('id', rel.id)
+        .single()
+
+      if (newRelationship) {
+        // Add to relationships list and select it
+        setRelationships(prev => [newRelationship as Relationship, ...prev])
+        setSelectedRelationship(newRelationship as Relationship)
+        alert('Test relationship created successfully!')
+      } else {
+        router.refresh()
+        alert('Test relationship created! Refreshing...')
+      }
     } catch (error) {
       console.error('Error creating test relationship:', error)
-      alert('Failed to create test relationship')
+      const errorMsg = error instanceof Error ? error.message : 'Failed to create test relationship'
+      alert(errorMsg)
     } finally {
       setIsCreatingRelationship(false)
     }
