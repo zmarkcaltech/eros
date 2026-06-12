@@ -114,28 +114,42 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to create Partner B: ${errorB?.message}`)
     }
 
-    // Update profiles with detailed information
-    await supabase
+    // Manually create profile records (admin.createUser doesn't trigger the profile creation)
+    const { error: profileAError } = await supabase
       .from('profiles')
-      .update({
+      .insert({
+        id: userA.user.id,
+        email: emailA,
+        full_name: profileA.fullName,
+        preferred_name: profileA.preferredName,
         age: profileA.age,
         pronouns: profileA.pronouns,
         occupation: profileA.occupation,
         self_description: profileA.selfDescription,
         interests: profileA.interests
       })
-      .eq('id', userA.user.id)
 
-    await supabase
+    if (profileAError) {
+      throw new Error(`Failed to create Partner A profile: ${profileAError.message}`)
+    }
+
+    const { error: profileBError } = await supabase
       .from('profiles')
-      .update({
+      .insert({
+        id: userB.user.id,
+        email: emailB,
+        full_name: profileB.fullName,
+        preferred_name: profileB.preferredName,
         age: profileB.age,
         pronouns: profileB.pronouns,
         occupation: profileB.occupation,
         self_description: profileB.selfDescription,
         interests: profileB.interests
       })
-      .eq('id', userB.user.id)
+
+    if (profileBError) {
+      throw new Error(`Failed to create Partner B profile: ${profileBError.message}`)
+    }
 
     // Create relationship
     const linkCode = Math.random().toString(36).substring(2, 8).toUpperCase()
