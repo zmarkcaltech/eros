@@ -34,7 +34,7 @@ interface TestConfig {
 
 interface Message {
   id: string
-  sender_type: 'partner_a' | 'partner_b' | 'ai_mediator'
+  sender_type: 'partner_a' | 'partner_b' | 'ai'
   content: string
   created_at: string
 }
@@ -195,7 +195,7 @@ async function getRelationship(id: string) {
 
 async function getRecentMessages(relationshipId: string, limit = 10): Promise<Message[]> {
   const { data } = await supabase
-    .from('chat_messages')
+    .from('messages')
     .select('*')
     .eq('relationship_id', relationshipId)
     .order('created_at', { ascending: false })
@@ -217,7 +217,7 @@ async function generatePartnerMessage(
   if (recentMessages.length > 0) {
     conversationContext = recentMessages
       .map((msg: Message) => {
-        if (msg.sender_type === 'ai_mediator') {
+        if (msg.sender_type === 'ai') {
           return `AI Mediator: ${msg.content}`
         } else if (msg.sender_type === partner) {
           return `${speakingPartner.preferred_name || speakingPartner.full_name}: ${msg.content}`
@@ -281,7 +281,7 @@ async function sendMessage(
   content: string
 ) {
   const { error } = await supabase
-    .from('chat_messages')
+    .from('messages')
     .insert({
       relationship_id: relationshipId,
       sender_id: senderId,
@@ -308,7 +308,7 @@ function printMessage(message: Message, partnerAName: string, partnerBName: stri
       sender = `${partnerBName}:`
       color = '\x1b[36m' // Cyan
       break
-    case 'ai_mediator':
+    case 'ai':
       sender = 'AI Mediator:'
       color = '\x1b[34m' // Blue
       break
@@ -325,10 +325,10 @@ async function waitForMediatorResponse(relationshipId: string, afterMessageId: s
 
   while (Date.now() - startTime < timeout) {
     const { data } = await supabase
-      .from('chat_messages')
+      .from('messages')
       .select('*')
       .eq('relationship_id', relationshipId)
-      .eq('sender_type', 'ai_mediator')
+      .eq('sender_type', 'ai')
       .gt('created_at', afterMessageId)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -390,7 +390,7 @@ async function runSimulation(config: TestConfig) {
 
     // Fetch the sent message to get its timestamp
     const { data: sentMessages } = await supabase
-      .from('chat_messages')
+      .from('messages')
       .select('*')
       .eq('relationship_id', relationship.id)
       .eq('sender_type', partner)

@@ -21,7 +21,7 @@ interface Relationship {
 interface Message {
   id: string
   sender_id: string | null
-  sender_type: 'partner_a' | 'partner_b' | 'ai_mediator'
+  sender_type: 'partner_a' | 'partner_b' | 'ai'
   content: string
   created_at: string
 }
@@ -55,7 +55,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
 
     const loadMessages = async () => {
       const { data } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .select('*')
         .eq('relationship_id', selectedRelationship.id)
         .order('created_at', { ascending: true })
@@ -75,7 +75,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chat_messages',
+          table: 'messages',
           filter: `relationship_id=eq.${selectedRelationship.id}`
         },
         (payload) => {
@@ -103,16 +103,21 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
       : selectedRelationship.partner_b_id
 
     try {
-      const { error } = await supabase
-        .from('chat_messages')
-        .insert({
-          relationship_id: selectedRelationship.id,
-          sender_id: senderId,
-          sender_type: asPartner,
+      const response = await fetch('/api/dev/send-message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          relationshipId: selectedRelationship.id,
+          senderId,
+          senderType: asPartner,
           content: content.trim()
         })
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to send message')
+      }
 
       // Clear input
       if (asPartner === 'partner_a') {
@@ -122,7 +127,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
       }
     } catch (error) {
       console.error('Error sending message:', error)
-      alert('Failed to send message')
+      alert(error instanceof Error ? error.message : 'Failed to send message')
     }
   }
 
@@ -241,7 +246,7 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
 
     try {
       const { error } = await supabase
-        .from('chat_messages')
+        .from('messages')
         .delete()
         .eq('relationship_id', selectedRelationship.id)
 
@@ -354,13 +359,13 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                       className={`max-w-[80%] rounded-lg px-4 py-2 ${
                         msg.sender_type === 'partner_a'
                           ? 'bg-purple-600 text-white'
-                          : msg.sender_type === 'ai_mediator'
+                          : msg.sender_type === 'ai'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-700 text-gray-200'
                       }`}
                     >
                       <p className="text-xs font-semibold mb-1">
-                        {msg.sender_type === 'ai_mediator' ? 'AI Mediator' : msg.sender_type === 'partner_a' ? 'You' : partnerBName}
+                        {msg.sender_type === 'ai' ? 'AI Mediator' : msg.sender_type === 'partner_a' ? 'You' : partnerBName}
                       </p>
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
@@ -417,13 +422,13 @@ export default function ChatSimulatorClient({ relationships, currentUserId }: Pr
                       className={`max-w-[80%] rounded-lg px-4 py-2 ${
                         msg.sender_type === 'partner_b'
                           ? 'bg-pink-600 text-white'
-                          : msg.sender_type === 'ai_mediator'
+                          : msg.sender_type === 'ai'
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-700 text-gray-200'
                       }`}
                     >
                       <p className="text-xs font-semibold mb-1">
-                        {msg.sender_type === 'ai_mediator' ? 'AI Mediator' : msg.sender_type === 'partner_b' ? 'You' : partnerAName}
+                        {msg.sender_type === 'ai' ? 'AI Mediator' : msg.sender_type === 'partner_b' ? 'You' : partnerAName}
                       </p>
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
