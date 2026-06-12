@@ -25,8 +25,8 @@ export default async function DashboardPage() {
     .from('relationships')
     .select(`
       *,
-      partner_a:profiles!partner_a_id(*),
-      partner_b:profiles!partner_b_id(*)
+      partner_a:profiles!relationships_partner_a_id_fkey(*),
+      partner_b:profiles!relationships_partner_b_id_fkey(*)
     `)
     .or(`partner_a_id.eq.${user.id},partner_b_id.eq.${user.id}`)
     .single()
