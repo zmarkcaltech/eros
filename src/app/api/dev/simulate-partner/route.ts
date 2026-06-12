@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { anthropic } from '@/lib/anthropic/client'
+import { anthropic, CLAUDE_MODEL } from '@/lib/anthropic/client'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface Message {
@@ -98,7 +98,7 @@ Guidelines:
 Return ONLY the message text, nothing else.`
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: CLAUDE_MODEL,
       max_tokens: 500,
       temperature: 1.0,
       messages: [{
