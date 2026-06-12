@@ -255,22 +255,21 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
 
       const { relationship: rel } = data
 
-      // Fetch the full relationship with profiles
-      const { data: newRelationship } = await supabase
-        .from('relationships')
-        .select(`
-          *,
-          partner_a:profiles!relationships_partner_a_id_fkey(id, full_name, preferred_name, avatar_url),
-          partner_b:profiles!relationships_partner_b_id_fkey(id, full_name, preferred_name, avatar_url)
-        `)
-        .eq('id', rel.id)
-        .single()
+      // Fetch all relationships via dev endpoint (bypasses RLS)
+      const relResponse = await fetch('/api/dev/relationships')
+      if (relResponse.ok) {
+        const relData = await relResponse.json()
+        const allRelationships = relData.relationships || []
+        setRelationships(allRelationships)
 
-      if (newRelationship) {
-        // Add to relationships list and select it
-        setRelationships(prev => [newRelationship as Relationship, ...prev])
-        setSelectedRelationship(newRelationship as Relationship)
-        alert('Test relationship created successfully!')
+        // Find and select the newly created one
+        const newRel = allRelationships.find((r: Relationship) => r.id === rel.id)
+        if (newRel) {
+          setSelectedRelationship(newRel)
+          alert('Test relationship created successfully!')
+        } else {
+          alert('Test relationship created but not found in list')
+        }
       } else {
         router.refresh()
         alert('Test relationship created! Refreshing...')
@@ -281,6 +280,21 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
       alert(errorMsg)
     } finally {
       setIsCreatingRelationship(false)
+    }
+  }
+
+  const refreshRelationships = async () => {
+    try {
+      const response = await fetch('/api/dev/relationships')
+      if (response.ok) {
+        const data = await response.json()
+        setRelationships(data.relationships || [])
+      } else {
+        throw new Error('Failed to fetch relationships')
+      }
+    } catch (error) {
+      console.error('Error refreshing relationships:', error)
+      alert('Failed to refresh relationships list')
     }
   }
 
@@ -352,6 +366,12 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
                   ))}
                 </select>
               </div>
+              <button
+                onClick={refreshRelationships}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors mt-auto"
+              >
+                Refresh List
+              </button>
               <button
                 onClick={clearChat}
                 className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition-colors mt-auto"

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import ChatSimulatorClient from './ChatSimulatorClient'
 
@@ -12,8 +13,19 @@ export default async function ChatSimulatorPage() {
     redirect('/login')
   }
 
-  // Fetch all relationships (for dev, show all relationships to choose from)
-  const { data: relationships } = await supabase
+  // Use service role to fetch all relationships (bypasses RLS for dev)
+  const adminSupabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+
+  const { data: relationships } = await adminSupabase
     .from('relationships')
     .select(`
       *,
