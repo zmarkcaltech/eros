@@ -1,266 +1,107 @@
-'use client'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import LinkPartnerClient from './LinkPartnerClient'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+export default async function LinkPartnerPage() {
+  const supabase = await createClient()
 
-export default function LinkPartnerPage() {
-  const [mode, setMode] = useState<'choose' | 'create' | 'join'>('choose')
-  const [relationshipDescription, setRelationshipDescription] = useState('')
-  const [linkCode, setLinkCode] = useState('')
-  const [generatedCode, setGeneratedCode] = useState('')
-  const [joinCode, setJoinCode] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  // Get current user
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-  const handleCreateRelationship = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    try {
-      const response = await fetch('/api/relationships', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ relationshipDescription }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create relationship')
-      }
-
-      setGeneratedCode(data.linkCode)
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('An error occurred')
-      }
-    } finally {
-      setLoading(false)
-    }
+  if (userError || !user) {
+    redirect('/login')
   }
 
-  const handleJoinRelationship = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  // Get user's profile
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single()
 
-    try {
-      const response = await fetch('/api/relationships/link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ linkCode: joinCode }),
-      })
+  // Check if user already has a relationship (for debugging)
+  const { data: relationship, error: relError } = await supabase
+    .from('relationships')
+    .select(`
+      *,
+      partner_a:profiles!relationships_partner_a_id_fkey(*),
+      partner_b:profiles!relationships_partner_b_id_fkey(*)
+    `)
+    .or(`partner_a_id.eq.${user.id},partner_b_id.eq.${user.id}`)
+    .single()
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to join relationship')
-      }
-
-      // Use window.location for hard redirect to ensure fresh data
-      window.location.href = '/dashboard'
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError('An error occurred')
-      }
-    } finally {
-      setLoading(false)
-    }
+  const handleLogout = async () => {
+    'use server'
+    const supabase = await createClient()
+    await supabase.auth.signOut()
+    redirect('/')
   }
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedCode)
-    alert('Link code copied to clipboard!')
-  }
-
-  if (mode === 'choose') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-            Link with Your Partner
-          </h1>
-          <p className="text-gray-600 text-center mb-8">
-            Choose how you want to set up your relationship
-          </p>
-
-          <div className="space-y-4">
-            <button
-              onClick={() => setMode('create')}
-              className="w-full bg-purple-600 text-white py-4 px-6 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors text-left"
-            >
-              <div className="font-semibold text-lg mb-1">Create New Relationship</div>
-              <div className="text-sm text-purple-100">
-                Generate a link code to share with your partner
-              </div>
-            </button>
-
-            <button
-              onClick={() => setMode('join')}
-              className="w-full bg-white border-2 border-purple-600 text-purple-600 py-4 px-6 rounded-lg hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors text-left"
-            >
-              <div className="font-semibold text-lg mb-1">Join Existing Relationship</div>
-              <div className="text-sm text-purple-600">
-                Enter the link code your partner shared with you
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (mode === 'create') {
-    if (generatedCode) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Relationship Created!</h2>
-              <p className="text-gray-600">Share this code with your partner</p>
-            </div>
-
-            <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6 mb-6">
-              <div className="text-sm text-gray-600 mb-2 text-center">Your Link Code</div>
-              <div className="text-4xl font-bold text-purple-600 text-center tracking-wider mb-4">
-                {generatedCode}
-              </div>
-              <button
-                onClick={copyToClipboard}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
-              >
-                Copy to Clipboard
-              </button>
-            </div>
-
-            <p className="text-sm text-gray-600 text-center mb-6">
-              Your partner can use this code to link their account with yours. Once they join, you can start
-              resolving conflicts together with Eros.
-            </p>
-
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Go to Dashboard
-            </button>
-          </div>
-        </div>
-      )
-    }
-
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-          <button
-            onClick={() => setMode('choose')}
-            className="text-gray-600 hover:text-gray-900 mb-4 flex items-center"
-          >
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Relationship</h2>
-
-          <form onSubmit={handleCreateRelationship} className="space-y-4">
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Describe your relationship (Optional)
-              </label>
-              <textarea
-                id="description"
-                value={relationshipDescription}
-                onChange={(e) => setRelationshipDescription(e.target.value)}
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="e.g., 'We've been together for 3 years and are working on better communication'"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                This helps our AI provide more personalized advice
-              </p>
-            </div>
-
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {loading ? 'Creating...' : 'Generate Link Code'}
-            </button>
-          </form>
-        </div>
-      </div>
-    )
-  }
-
-  // Join mode
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <button
-          onClick={() => setMode('choose')}
-          className="text-gray-600 hover:text-gray-900 mb-4 flex items-center"
-        >
-          <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
-
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Join Relationship</h2>
-        <p className="text-gray-600 mb-6">Enter the code your partner shared with you</p>
-
-        <form onSubmit={handleJoinRelationship} className="space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <label htmlFor="linkCode" className="block text-sm font-medium text-gray-700 mb-1">
-              Link Code
-            </label>
-            <input
-              id="linkCode"
-              type="text"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-              required
-              maxLength={8}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-center text-2xl font-bold tracking-wider"
-              placeholder="XXXXXXXX"
-            />
+            <h1 className="text-2xl font-bold text-purple-600">Eros</h1>
           </div>
+          <div className="flex items-center gap-6">
+            <span className="text-gray-600">Welcome, {profile?.preferred_name || profile?.full_name || 'User'}</span>
+            <Link
+              href="/profile"
+              className="text-gray-600 hover:text-purple-600 transition-colors flex items-center gap-1"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-sm font-medium">Profile</span>
+            </Link>
+            <form action={handleLogout}>
+              <button
+                type="submit"
+                className="text-gray-600 hover:text-gray-900 text-sm"
+              >
+                Logout
+              </button>
+            </form>
+          </div>
+        </div>
+      </header>
 
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-              {error}
+      {/* Debug info */}
+      {relationship && (
+        <div className="container mx-auto px-4 py-4">
+          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-900 mb-2">Debug: Relationship Found</h3>
+                <div className="text-sm text-yellow-800 space-y-1">
+                  <p><strong>Relationship ID:</strong> {relationship.id}</p>
+                  <p><strong>Status:</strong> {relationship.status}</p>
+                  <p><strong>Partner A ID:</strong> {relationship.partner_a_id}</p>
+                  <p><strong>Partner B ID:</strong> {relationship.partner_b_id || '(waiting)'}</p>
+                  <p><strong>Your User ID:</strong> {user.id}</p>
+                  <p><strong>Query Error:</strong> {relError ? relError.message : 'None'}</p>
+                </div>
+                <div className="mt-3">
+                  <Link
+                    href="/dashboard"
+                    className="inline-block bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                  >
+                    Go to Dashboard Instead
+                  </Link>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          <button
-            type="submit"
-            disabled={loading || joinCode.length !== 8}
-            className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Joining...' : 'Join Relationship'}
-          </button>
-        </form>
-      </div>
+      <LinkPartnerClient />
     </div>
   )
 }
