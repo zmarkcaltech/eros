@@ -1,10 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { anthropic } from '@/lib/anthropic/client'
 import { NextRequest, NextResponse } from 'next/server'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!
-})
 
 interface Message {
   sender_type: 'partner_a' | 'partner_b' | 'ai_mediator'
@@ -102,7 +98,7 @@ Guidelines:
 Return ONLY the message text, nothing else.`
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-5-sonnet-20241022',
       max_tokens: 500,
       temperature: 1.0,
       messages: [{
