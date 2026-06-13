@@ -52,52 +52,60 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
 
   const messagesEndRefA = useRef<HTMLDivElement>(null)
   const messagesEndRefB = useRef<HTMLDivElement>(null)
+  const previousMessageCountRef = useRef(0)
 
   // Load messages for selected relationship
   useEffect(() => {
     if (!selectedRelationship) return
 
     const loadMessages = async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('relationship_id', selectedRelationship.id)
-        .order('created_at', { ascending: true })
-
-      if (data) {
-        setMessages(data)
+      try {
+        const response = await fetch(`/api/dev/messages?relationshipId=${selectedRelationship.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setMessages(data.messages || [])
+        } else {
+          console.error('Failed to load messages')
+        }
+      } catch (error) {
+        console.error('Error loading messages:', error)
       }
     }
 
     loadMessages()
 
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel(`chat:${selectedRelationship.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `relationship_id=eq.${selectedRelationship.id}`
-        },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message])
-        }
-      )
-      .subscribe()
+    // Poll for new messages every 2 seconds to capture AI mediator responses
+    const pollInterval = setInterval(() => {
+      loadMessages()
+    }, 2000)
 
     return () => {
-      supabase.removeChannel(channel)
+      clearInterval(pollInterval)
     }
-  }, [selectedRelationship, supabase])
+  }, [selectedRelationship])
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom only when new messages arrive
   useEffect(() => {
-    messagesEndRefA.current?.scrollIntoView({ behavior: 'smooth' })
-    messagesEndRefB.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length > previousMessageCountRef.current) {
+      messagesEndRefA.current?.scrollIntoView({ behavior: 'smooth' })
+      messagesEndRefB.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+    previousMessageCountRef.current = messages.length
   }, [messages])
+
+  const reloadMessages = async () => {
+    if (!selectedRelationship) return
+
+    try {
+      const response = await fetch(`/api/dev/messages?relationshipId=${selectedRelationship.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setMessages(data.messages || [])
+      }
+    } catch (error) {
+      console.error('Error reloading messages:', error)
+    }
+  }
 
   const sendMessage = async (asPartner: 'partner_a' | 'partner_b', content: string) => {
     if (!selectedRelationship || !content.trim()) return
@@ -129,6 +137,9 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
       } else {
         setMessageB('')
       }
+
+      // Reload messages to show the sent message and any AI responses
+      await reloadMessages()
     } catch (error) {
       console.error('Error sending message:', error)
       alert(error instanceof Error ? error.message : 'Failed to send message')
@@ -177,11 +188,17 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
   }
 
   const startAISimulation = async () => {
-    if (!selectedRelationship || !scenario.trim()) {
+    if (!selectedRelationship) {
+      alert('Please select a relationship first')
+      return
+    }
+
+    if (!scenario.trim()) {
       alert('Please enter a scenario/conflict topic first')
       return
     }
 
+    console.log('Starting AI simulation with scenario:', scenario)
     setIsSimulating(true)
     setSimulationStatus('Starting AI simulation...')
 
@@ -192,6 +209,10 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
 
         setSimulationStatus(`Turn ${i + 1}/6: ${partner === 'partner_a' ? 'Partner A' : 'Partner B'} thinking...`)
 
+        // Get latest messages for context
+        const currentMessages = messages.slice(-10)
+        console.log(`Generating message for ${partner} with ${currentMessages.length} context messages`)
+
         const response = await fetch('/api/dev/simulate-partner', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -199,23 +220,29 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
             relationshipId: selectedRelationship.id,
             partner,
             scenario,
-            recentMessages: messages.slice(-10)
+            recentMessages: currentMessages
           })
         })
 
         const data = await response.json()
 
         if (!response.ok) {
+          console.error('Simulation API error:', data)
           throw new Error(data.error || 'Failed to generate message')
         }
 
         const { message } = data
+        console.log(`Generated message for ${partner}:`, message.substring(0, 50) + '...')
 
         // Send the message
         await sendMessage(partner, message)
 
         // Wait for AI mediator to respond (Claude Opus can take 5-10 seconds)
+        setSimulationStatus(`Turn ${i + 1}/6: Waiting for AI mediator...`)
         await new Promise(resolve => setTimeout(resolve, 8000))
+
+        // Reload messages to capture AI response
+        await reloadMessages()
       }
 
       setSimulationStatus('Simulation complete!')
@@ -223,7 +250,7 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
     } catch (error) {
       console.error('Error during simulation:', error)
       const errorMsg = error instanceof Error ? error.message : 'Simulation failed'
-      alert(errorMsg)
+      alert(`Simulation failed: ${errorMsg}`)
       setSimulationStatus('')
     } finally {
       setIsSimulating(false)
@@ -304,17 +331,19 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
     if (!confirm('Delete all messages in this chat?')) return
 
     try {
-      const { error } = await supabase
-        .from('messages')
-        .delete()
-        .eq('relationship_id', selectedRelationship.id)
+      const response = await fetch(`/api/dev/clear-messages?relationshipId=${selectedRelationship.id}`, {
+        method: 'DELETE'
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to clear chat')
+      }
 
       setMessages([])
     } catch (error) {
       console.error('Error clearing chat:', error)
-      alert('Failed to clear chat')
+      alert(error instanceof Error ? error.message : 'Failed to clear chat')
     }
   }
 

@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@supabase/supabase-js'
 import { anthropic, CLAUDE_MODEL } from '@/lib/anthropic/client'
 import { NextRequest, NextResponse } from 'next/server'
 
 interface Message {
-  sender_type: 'partner_a' | 'partner_b' | 'ai_mediator'
+  sender_type: 'partner_a' | 'partner_b' | 'ai'
   content: string
   created_at: string
 }
@@ -19,7 +19,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    // Use service role to bypass RLS for dev testing
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
 
     // Get relationship details with profiles
     const { data: relationship, error: relError } = await supabase
@@ -48,7 +58,7 @@ export async function POST(request: NextRequest) {
     if (recentMessages && recentMessages.length > 0) {
       conversationContext = recentMessages
         .map((msg: Message) => {
-          if (msg.sender_type === 'ai_mediator') {
+          if (msg.sender_type === 'ai') {
             return `AI Mediator: ${msg.content}`
           } else if (msg.sender_type === partner) {
             return `${speakingPartner.preferred_name || speakingPartner.full_name}: ${msg.content}`
