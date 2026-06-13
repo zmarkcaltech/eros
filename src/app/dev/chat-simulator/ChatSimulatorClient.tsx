@@ -214,8 +214,8 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
         // Send the message
         await sendMessage(partner, message)
 
-        // Wait a bit for mediator response and to make it feel more natural
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        // Wait for AI mediator to respond (Claude Opus can take 5-10 seconds)
+        await new Promise(resolve => setTimeout(resolve, 8000))
       }
 
       setSimulationStatus('Simulation complete!')
