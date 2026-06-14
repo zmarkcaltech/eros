@@ -69,6 +69,13 @@ export async function POST(request: NextRequest) {
         .join('\n\n')
     }
 
+    // Build personality context
+    const personalityInfo = []
+    if ((speakingPartner as any).personality) personalityInfo.push(`- Personality: ${(speakingPartner as any).personality}`)
+    if ((speakingPartner as any).communication_style) personalityInfo.push(`- Communication style: ${(speakingPartner as any).communication_style}`)
+    if ((speakingPartner as any).enthusiasm_level) personalityInfo.push(`- Enthusiasm level: ${(speakingPartner as any).enthusiasm_level}`)
+    if ((speakingPartner as any).hidden_truth) personalityInfo.push(`- Hidden truth (not yet shared with partner): ${(speakingPartner as any).hidden_truth}`)
+
     // Generate realistic partner response
     const prompt = `You are simulating a realistic partner in a couples therapy chat.
 
@@ -79,6 +86,7 @@ export async function POST(request: NextRequest) {
 - Occupation: ${speakingPartner.occupation || 'unknown'}
 - Self-description: ${speakingPartner.self_description || 'No description available'}
 - Interests: ${speakingPartner.interests || 'unknown'}
+${personalityInfo.length > 0 ? '\n' + personalityInfo.join('\n') : ''}
 
 **Their Partner:**
 - Name: ${otherPartner.preferred_name || otherPartner.full_name}
@@ -95,9 +103,12 @@ ${conversationContext ? `**Recent Conversation:**\n${conversationContext}\n` : '
 Generate a realistic, natural message that ${speakingPartner.preferred_name || speakingPartner.full_name} would send in this couples therapy chat.
 
 Guidelines:
-- Stay in character based on their profile
+- Stay in character based on their personality, communication style, and enthusiasm level
 - Be authentic and emotionally genuine
 - Keep messages conversational (2-4 sentences typically)
+- Match the enthusiasm level (low = brief/withdrawn, medium = balanced, high = engaged/expressive)
+- Match the communication style (e.g., logical vs emotional, direct vs passive-aggressive)
+- If there's a hidden truth, let it subtly influence your emotions/reactions but don't reveal it directly unless it feels natural
 - Show vulnerability when appropriate
 - Reference the scenario/conflict if provided
 - React naturally to what the AI mediator or partner has said

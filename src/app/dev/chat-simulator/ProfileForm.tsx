@@ -10,6 +10,10 @@ interface PartnerProfile {
   occupation: string
   selfDescription: string
   interests: string
+  personality?: string
+  hiddenTruth?: string
+  enthusiasmLevel?: 'low' | 'medium' | 'high'
+  communicationStyle?: string
 }
 
 interface RelationshipInfo {
@@ -32,7 +36,11 @@ const defaultPartnerA: PartnerProfile = {
   pronouns: 'they/them',
   occupation: 'Software Engineer',
   selfDescription: 'I value clear communication and quality time together. Sometimes I get overwhelmed with work stress.',
-  interests: 'Hiking, cooking, reading sci-fi'
+  interests: 'Hiking, cooking, reading sci-fi',
+  personality: 'Introverted, analytical, tends to withdraw when stressed',
+  hiddenTruth: 'Feeling burnt out at work but afraid to admit it might mean needing a career change',
+  enthusiasmLevel: 'medium',
+  communicationStyle: 'Logical and measured, sometimes overly rational when avoiding emotions'
 }
 
 const defaultPartnerB: PartnerProfile = {
@@ -42,7 +50,11 @@ const defaultPartnerB: PartnerProfile = {
   pronouns: 'she/her',
   occupation: 'Graphic Designer',
   selfDescription: 'I\'m creative and emotional. I need verbal affirmation and struggle when I feel unheard.',
-  interests: 'Art, yoga, traveling'
+  interests: 'Art, yoga, traveling',
+  personality: 'Extroverted, expressive, needs verbal reassurance',
+  hiddenTruth: 'Worried that Alex is pulling away emotionally and fears they might want to break up',
+  enthusiasmLevel: 'high',
+  communicationStyle: 'Emotional and direct, sometimes escalates quickly when feeling dismissed'
 }
 
 const defaultRelationship: RelationshipInfo = {
@@ -140,6 +152,36 @@ export default function ProfileForm({ onSubmit, isCreating }: Props) {
                 placeholder="Interests"
                 className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white col-span-2"
               />
+              <textarea
+                value={partnerA.personality || ''}
+                onChange={(e) => setPartnerA({ ...partnerA, personality: e.target.value })}
+                placeholder="Personality (e.g., 'introverted, analytical, conflict-avoidant')"
+                rows={2}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white col-span-2"
+              />
+              <textarea
+                value={partnerA.hiddenTruth || ''}
+                onChange={(e) => setPartnerA({ ...partnerA, hiddenTruth: e.target.value })}
+                placeholder="Hidden Truth (optional - secret feelings/thoughts they haven't shared)"
+                rows={2}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white col-span-2"
+              />
+              <select
+                value={partnerA.enthusiasmLevel || 'medium'}
+                onChange={(e) => setPartnerA({ ...partnerA, enthusiasmLevel: e.target.value as 'low' | 'medium' | 'high' })}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white"
+              >
+                <option value="low">Enthusiasm: Low</option>
+                <option value="medium">Enthusiasm: Medium</option>
+                <option value="high">Enthusiasm: High</option>
+              </select>
+              <input
+                type="text"
+                value={partnerA.communicationStyle || ''}
+                onChange={(e) => setPartnerA({ ...partnerA, communicationStyle: e.target.value })}
+                placeholder="Communication Style (e.g., 'direct and logical', 'passive-aggressive')"
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white"
+              />
             </div>
           </div>
 
@@ -195,6 +237,36 @@ export default function ProfileForm({ onSubmit, isCreating }: Props) {
                 onChange={(e) => setPartnerB({ ...partnerB, interests: e.target.value })}
                 placeholder="Interests"
                 className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white col-span-2"
+              />
+              <textarea
+                value={partnerB.personality || ''}
+                onChange={(e) => setPartnerB({ ...partnerB, personality: e.target.value })}
+                placeholder="Personality (e.g., 'introverted, analytical, conflict-avoidant')"
+                rows={2}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white col-span-2"
+              />
+              <textarea
+                value={partnerB.hiddenTruth || ''}
+                onChange={(e) => setPartnerB({ ...partnerB, hiddenTruth: e.target.value })}
+                placeholder="Hidden Truth (optional - secret feelings/thoughts they haven't shared)"
+                rows={2}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white col-span-2"
+              />
+              <select
+                value={partnerB.enthusiasmLevel || 'medium'}
+                onChange={(e) => setPartnerB({ ...partnerB, enthusiasmLevel: e.target.value as 'low' | 'medium' | 'high' })}
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white"
+              >
+                <option value="low">Enthusiasm: Low</option>
+                <option value="medium">Enthusiasm: Medium</option>
+                <option value="high">Enthusiasm: High</option>
+              </select>
+              <input
+                type="text"
+                value={partnerB.communicationStyle || ''}
+                onChange={(e) => setPartnerB({ ...partnerB, communicationStyle: e.target.value })}
+                placeholder="Communication Style (e.g., 'direct and logical', 'passive-aggressive')"
+                className="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-white"
               />
             </div>
           </div>

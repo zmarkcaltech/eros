@@ -9,6 +9,10 @@ interface PartnerProfile {
   occupation: string
   selfDescription: string
   interests: string
+  personality?: string
+  hiddenTruth?: string
+  enthusiasmLevel?: 'low' | 'medium' | 'high'
+  communicationStyle?: string
 }
 
 interface RelationshipInfo {
@@ -126,7 +130,11 @@ export async function POST(request: NextRequest) {
         pronouns: profileA.pronouns,
         occupation: profileA.occupation,
         self_description: profileA.selfDescription,
-        interests: profileA.interests
+        interests: profileA.interests,
+        personality: profileA.personality,
+        hidden_truth: profileA.hiddenTruth,
+        enthusiasm_level: profileA.enthusiasmLevel,
+        communication_style: profileA.communicationStyle
       })
 
     if (profileAError) {
@@ -144,7 +152,11 @@ export async function POST(request: NextRequest) {
         pronouns: profileB.pronouns,
         occupation: profileB.occupation,
         self_description: profileB.selfDescription,
-        interests: profileB.interests
+        interests: profileB.interests,
+        personality: profileB.personality,
+        hidden_truth: profileB.hiddenTruth,
+        enthusiasm_level: profileB.enthusiasmLevel,
+        communication_style: profileB.communicationStyle
       })
 
     if (profileBError) {
