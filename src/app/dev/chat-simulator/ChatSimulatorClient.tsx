@@ -187,6 +187,46 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
     }
   }
 
+  const determineNextSpeaker = async (): Promise<'partner_a' | 'partner_b'> => {
+    if (!selectedRelationship) return 'partner_a'
+
+    try {
+      // Fetch latest messages from API to ensure we have the AI mediator's response
+      const messagesResponse = await fetch(`/api/dev/messages?relationshipId=${selectedRelationship.id}`)
+      if (!messagesResponse.ok) {
+        console.error('Failed to fetch messages for speaker determination')
+        return 'partner_a'
+      }
+
+      const messagesData = await messagesResponse.json()
+      const latestMessages = messagesData.messages || []
+
+      const response = await fetch('/api/dev/determine-next-speaker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerAName,
+          partnerBName,
+          recentMessages: latestMessages.slice(-10)
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Failed to determine next speaker:', data)
+        // Default to partner_a if determination fails
+        return 'partner_a'
+      }
+
+      return data.nextSpeaker
+    } catch (error) {
+      console.error('Error determining next speaker:', error)
+      // Default to partner_a if determination fails
+      return 'partner_a'
+    }
+  }
+
   const startAISimulation = async () => {
     if (!selectedRelationship) {
       alert('Please select a relationship first')
@@ -203,22 +243,23 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
     setSimulationStatus('Starting AI simulation...')
 
     try {
-      // Generate and send messages alternately
-      for (let i = 0; i < 6; i++) {
-        const partner = i % 2 === 0 ? 'partner_a' : 'partner_b'
+      // Start with partner_a for the first message
+      let nextPartner: 'partner_a' | 'partner_b' = 'partner_a'
 
-        setSimulationStatus(`Turn ${i + 1}/6: ${partner === 'partner_a' ? 'Partner A' : 'Partner B'} thinking...`)
+      for (let i = 0; i < 6; i++) {
+        setSimulationStatus(`Turn ${i + 1}/6: ${nextPartner === 'partner_a' ? partnerAName : partnerBName} thinking...`)
 
         // Get latest messages for context
         const currentMessages = messages.slice(-10)
-        console.log(`Generating message for ${partner} with ${currentMessages.length} context messages`)
+        console.log(`Turn ${i + 1}: Generating message for ${nextPartner}`)
 
+        // Generate partner message
         const response = await fetch('/api/dev/simulate-partner', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             relationshipId: selectedRelationship.id,
-            partner,
+            partner: nextPartner,
             scenario,
             recentMessages: currentMessages
           })
@@ -232,10 +273,10 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
         }
 
         const { message } = data
-        console.log(`Generated message for ${partner}:`, message.substring(0, 50) + '...')
+        console.log(`Generated message for ${nextPartner}:`, message.substring(0, 50) + '...')
 
         // Send the message
-        await sendMessage(partner, message)
+        await sendMessage(nextPartner, message)
 
         // Wait for AI mediator to respond (Claude Opus can take 5-10 seconds)
         setSimulationStatus(`Turn ${i + 1}/6: Waiting for AI mediator...`)
@@ -243,6 +284,12 @@ export default function ChatSimulatorClient({ relationships: initialRelationship
 
         // Reload messages to capture AI response
         await reloadMessages()
+
+        // Determine who should speak next based on AI mediator's message
+        setSimulationStatus(`Turn ${i + 1}/6: Analyzing mediator's direction...`)
+        nextPartner = await determineNextSpeaker()
+
+        console.log(`Mediator directed next turn to: ${nextPartner}`)
       }
 
       setSimulationStatus('Simulation complete!')
