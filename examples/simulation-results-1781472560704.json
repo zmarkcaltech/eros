@@ -1,0 +1,38 @@
+{
+  "success": true,
+  "total": 5,
+  "succeeded": 0,
+  "failed": 5,
+  "results": [
+    {
+      "index": 0,
+      "success": false,
+      "scenario": "Disagreement about how much time to spend with each other vs friends",
+      "error": "Simulation failed: Failed to create test relationship: Failed to create test relationship: Failed to create Partner A profile: Could not find the 'communication_style' column of 'profiles' in the schema cache"
+    },
+    {
+      "index": 1,
+      "success": false,
+      "scenario": "Conflict about household chores distribution and mental load",
+      "error": "Simulation failed: Failed to create test relationship: Failed to create test relationship: Failed to create Partner A profile: Could not find the 'communication_style' column of 'profiles' in the schema cache"
+    },
+    {
+      "index": 2,
+      "success": false,
+      "scenario": "One partner wants to discuss relationship problems, other wants to avoid",
+      "error": "Simulation failed: Failed to create test relationship: Failed to create test relationship: Failed to create Partner A profile: Could not find the 'communication_style' column of 'profiles' in the schema cache"
+    },
+    {
+      "index": 3,
+      "success": false,
+      "scenario": "Financial stress and disagreement about spending priorities",
+      "error": "Simulation failed: Failed to create test relationship: Failed to create test relationship: Failed to create Partner A profile: Could not find the 'communication_style' column of 'profiles' in the schema cache"
+    },
+    {
+      "index": 4,
+      "success": false,
+      "scenario": "Communication breakdown after a betrayal of trust (emotional affair)",
+      "error": "Simulation failed: Failed to create test relationship: Failed to create test relationship: Failed to create Partner A profile: Could not find the 'communication_style' column of 'profiles' in the schema cache"
+    }
+  ]
+}

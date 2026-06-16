@@ -1,0 +1,195 @@
+{
+  "delayBetweenSimulations": 3000,
+  "simulations": [
+    {
+      "scenario": "Disagreement about how much time to spend with each other vs friends",
+      "numTurns": 5,
+      "tags": ["closeness-distance", "medium-conflict"],
+      "partnerA": {
+        "fullName": "Alex Johnson",
+        "preferredName": "Alex",
+        "age": 28,
+        "pronouns": "they/them",
+        "occupation": "Software Engineer",
+        "selfDescription": "I value independence and alone time to recharge",
+        "interests": "Gaming, hiking solo, reading",
+        "personality": "Introverted, needs personal space, values autonomy",
+        "hiddenTruth": "Sometimes feels smothered and wants more freedom but doesn't want to hurt partner's feelings",
+        "enthusiasmLevel": "low",
+        "communicationStyle": "Withdrawn, minimizing, sometimes defensive when feeling cornered"
+      },
+      "partnerB": {
+        "fullName": "Sam Martinez",
+        "preferredName": "Sam",
+        "age": 26,
+        "pronouns": "she/her",
+        "occupation": "Elementary School Teacher",
+        "selfDescription": "I'm social and love spending quality time together",
+        "interests": "Dinner parties, couples activities, volunteering",
+        "personality": "Extroverted, connection-oriented, fears abandonment",
+        "hiddenTruth": "Worries that Alex's need for space means they don't love them as much",
+        "enthusiasmLevel": "high",
+        "communicationStyle": "Emotional, pursues connection, sometimes protests loudly"
+      },
+      "relationship": {
+        "durationMonths": 18,
+        "description": "Met through mutual friends, been together 1.5 years. Different social needs causing tension.",
+        "goals": "Find a balance between togetherness and independence",
+        "howWeMet": "Through mutual friends at a board game night",
+        "livingSituation": "Living together for 6 months"
+      }
+    },
+    {
+      "scenario": "Conflict about household chores distribution and mental load",
+      "numTurns": 5,
+      "tags": ["household-labor", "resentment", "high-conflict"],
+      "partnerA": {
+        "fullName": "Jordan Chen",
+        "preferredName": "Jordan",
+        "age": 32,
+        "pronouns": "she/her",
+        "occupation": "Marketing Director",
+        "selfDescription": "Hardworking professional who values fairness",
+        "interests": "Career development, fitness, organizing",
+        "personality": "Type-A, notice-oriented, builds resentment when things feel unfair",
+        "hiddenTruth": "Exhausted from always being the one to manage household stuff and starting to feel like a parent instead of a partner",
+        "enthusiasmLevel": "medium",
+        "communicationStyle": "Starts calm but escalates to angry accusations when frustrated"
+      },
+      "partnerB": {
+        "fullName": "Riley Thompson",
+        "preferredName": "Riley",
+        "age": 30,
+        "pronouns": "he/him",
+        "occupation": "Freelance Graphic Designer",
+        "selfDescription": "Creative and laid-back",
+        "interests": "Art, music, spontaneous adventures",
+        "personality": "Easygoing, doesn't notice mess, avoids conflict",
+        "hiddenTruth": "Feels constantly criticized and like nothing they do is good enough",
+        "enthusiasmLevel": "low",
+        "communicationStyle": "Defensive, makes excuses, sometimes passive-aggressive"
+      },
+      "relationship": {
+        "durationMonths": 36,
+        "description": "Together 3 years, different standards for cleanliness and organization creating friction.",
+        "goals": "Create a fair system for household tasks that works for both",
+        "howWeMet": "At an art gallery opening",
+        "livingSituation": "Living together for 2 years"
+      }
+    },
+    {
+      "scenario": "One partner wants to discuss relationship problems, other wants to avoid",
+      "numTurns": 5,
+      "tags": ["pursue-withdraw", "communication-pattern", "medium-conflict"],
+      "partnerA": {
+        "fullName": "Taylor Kim",
+        "preferredName": "Taylor",
+        "age": 29,
+        "pronouns": "she/her",
+        "occupation": "Therapist",
+        "selfDescription": "Values open communication and processing emotions",
+        "interests": "Psychology, journaling, deep conversations",
+        "personality": "Introspective, emotionally aware, needs to talk through feelings",
+        "hiddenTruth": "Feels lonely in the relationship and scared that avoiding problems means partner doesn't care",
+        "enthusiasmLevel": "high",
+        "communicationStyle": "Pursues conversation relentlessly, asks probing questions, gets anxious when partner shuts down"
+      },
+      "partnerB": {
+        "fullName": "Casey Morgan",
+        "preferredName": "Casey",
+        "age": 31,
+        "pronouns": "he/him",
+        "occupation": "Accountant",
+        "selfDescription": "Practical and solution-oriented",
+        "interests": "Sports, fixing things, spending time outdoors",
+        "personality": "Action-oriented, uncomfortable with emotions, avoids heavy conversations",
+        "hiddenTruth": "Feels overwhelmed and incompetent when partner wants to analyze the relationship constantly",
+        "enthusiasmLevel": "low",
+        "communicationStyle": "Stonewalling, changing subject, saying 'everything is fine' when it's not"
+      },
+      "relationship": {
+        "durationMonths": 24,
+        "description": "2 years together, different approaches to handling relationship issues causing disconnect.",
+        "goals": "Find a middle ground for addressing problems without overwhelming either person",
+        "howWeMet": "On a dating app",
+        "livingSituation": "Living together for 8 months"
+      }
+    },
+    {
+      "scenario": "Financial stress and disagreement about spending priorities",
+      "numTurns": 5,
+      "tags": ["money", "values-conflict", "medium-conflict"],
+      "partnerA": {
+        "fullName": "Morgan Davis",
+        "preferredName": "Morgan",
+        "age": 27,
+        "pronouns": "they/them",
+        "occupation": "Nonprofit Program Manager",
+        "selfDescription": "Values meaningful work over high salary",
+        "interests": "Social justice, community organizing, simple living",
+        "personality": "Values-driven, frugal, judgmental of materialism",
+        "hiddenTruth": "Secretly envious of partner's ability to buy nice things but doesn't want to admit it",
+        "enthusiasmLevel": "medium",
+        "communicationStyle": "Moralistic, lectures about values, sometimes condescending"
+      },
+      "partnerB": {
+        "fullName": "Avery Lewis",
+        "preferredName": "Avery",
+        "age": 28,
+        "pronouns": "she/her",
+        "occupation": "Corporate Lawyer",
+        "selfDescription": "Worked hard to achieve financial success",
+        "interests": "Fashion, nice restaurants, travel",
+        "personality": "Ambitious, enjoys luxury, feels defensive about spending",
+        "hiddenTruth": "Feels judged and misunderstood, like partner doesn't appreciate the long hours they work",
+        "enthusiasmLevel": "medium",
+        "communicationStyle": "Defensive, justifies spending, sometimes dismissive of partner's concerns"
+      },
+      "relationship": {
+        "durationMonths": 20,
+        "description": "Different values around money and lifestyle causing tension. Both contribute to shared expenses but disagree on priorities.",
+        "goals": "Respect each other's financial choices while finding shared financial goals",
+        "howWeMet": "At a mutual friend's wedding",
+        "livingSituation": "Living together for 4 months"
+      }
+    },
+    {
+      "scenario": "Communication breakdown after a betrayal of trust (emotional affair)",
+      "numTurns": 5,
+      "tags": ["trust", "betrayal", "high-conflict", "repair"],
+      "partnerA": {
+        "fullName": "Quinn Anderson",
+        "preferredName": "Quinn",
+        "age": 34,
+        "pronouns": "he/him",
+        "occupation": "Sales Manager",
+        "selfDescription": "Charismatic and social",
+        "interests": "Networking, team sports, social events",
+        "personality": "Outgoing, seeks validation, gets defensive when criticized",
+        "hiddenTruth": "Feels terrible about the emotional affair and doesn't know how to make it right, scared of losing partner",
+        "enthusiasmLevel": "medium",
+        "communicationStyle": "Apologetic but defensive, minimizes what happened, wants to 'move on'"
+      },
+      "partnerB": {
+        "fullName": "Reese Walker",
+        "preferredName": "Reese",
+        "age": 33,
+        "pronouns": "she/her",
+        "occupation": "Nurse",
+        "selfDescription": "Caring but struggling to trust again",
+        "interests": "Healthcare advocacy, reading, time with family",
+        "personality": "Loyal, deeply hurt, oscillates between wanting to forgive and wanting to punish",
+        "hiddenTruth": "Doesn't know if they can ever trust Quinn again but doesn't want to give up on the relationship",
+        "enthusiasmLevel": "low",
+        "communicationStyle": "Hurt, asks pointed questions, sometimes brings up past mistakes, vacillates between anger and sadness"
+      },
+      "relationship": {
+        "durationMonths": 60,
+        "description": "Together 5 years, married for 2. Quinn had an emotional affair 3 months ago. Trying to rebuild trust.",
+        "goals": "Rebuild trust, understand what led to the affair, decide if the relationship can be repaired",
+        "howWeMet": "At a hospital charity event",
+        "livingSituation": "Married, own a home together"
+      }
+    }
+  ]
+}
