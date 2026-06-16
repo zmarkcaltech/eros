@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eros User Flow Chart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .flow-section {
+            margin-bottom: 60px;
+        }
+
+        .section-title {
+            font-size: 1.8em;
+            color: #764ba2;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .flow-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .flow-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .flow-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .flow-box.start {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .flow-box.auth {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .flow-box.setup {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .flow-box.dashboard {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .flow-box.feature {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+
+        .flow-box.end {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+        }
+
+        .flow-box h3 {
+            font-size: 1.2em;
+            margin-bottom: 8px;
+        }
+
+        .flow-box p {
+            font-size: 0.9em;
+            opacity: 0.95;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .arrow-down {
+            transform: rotate(90deg);
+            display: inline-block;
+        }
+
+        .decision {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+            border-radius: 50%;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .branch-container {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .branch-label {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .feature-card .icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .flow-row {
+                flex-direction: column;
+            }
+
+            .branch-container {
+                flex-direction: column;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Eros User Flow Chart</h1>
+        <p class="subtitle">AI Couples Communication Assistant - Complete User Journey</p>
+
+        <!-- Main Flow -->
+        <div class="flow-section">
+            <h2 class="section-title">📍 Main User Journey</h2>
+
+            <div class="flow-container">
+                <!-- Start -->
+                <div class="flow-box start">
+                    <h3>🏠 Landing Page</h3>
+                    <p>Features, How It Works, Get Started</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <!-- Auth Choice -->
+                <div class="decision">
+                    <div>New User or Existing?</div>
+                </div>
+
+                <div class="branch-container">
+                    <!-- Sign Up Branch -->
+                    <div class="branch">
+                        <span class="branch-label">New User</span>
+                        <div class="flow-box auth">
+                            <h3>📝 Sign Up</h3>
+                            <p>Create account with email</p>
+                        </div>
+                        <span class="arrow arrow-down">→</span>
+                        <div class="flow-box setup">
+                            <h3>👤 Profile Setup</h3>
+                            <p>Name, age, pronouns, interests</p>
+                        </div>
+                    </div>
+
+                    <!-- Login Branch -->
+                    <div class="branch">
+                        <span class="branch-label">Existing User</span>
+                        <div class="flow-box auth">
+                            <h3>🔐 Login</h3>
+                            <p>Email + password</p>
+                        </div>
+                        <span class="arrow arrow-down">→</span>
+                        <div class="flow-box auth">
+                            <h3>✅ Authenticated</h3>
+                            <p>Session validated</p>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <!-- Link Partner -->
+                <div class="decision">
+                    <div>Has Relationship?</div>
+                </div>
+
+                <div class="flow-row">
+                    <div class="flow-box setup">
+                        <h3>🔗 Link Partner</h3>
+                        <p>Generate code OR enter partner's code</p>
+                    </div>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-row">
+                    <div class="flow-box setup">
+                        <h3>💑 Relationship Setup</h3>
+                        <p>Duration, goals, how you met, living situation</p>
+                    </div>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="decision">
+                    <div>Both Partners Linked?</div>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <!-- Dashboard -->
+                <div class="flow-box dashboard">
+                    <h3>🎯 DASHBOARD</h3>
+                    <p>Your relationship hub</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="flow-section">
+            <h2 class="section-title">✨ Available Features from Dashboard</h2>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon">💬</div>
+                    <h3>Conflict Chat</h3>
+                    <p>3-way real-time conversation with AI mediator using Emotionally Focused Therapy. Partner A + Partner B + AI work through conflicts together.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🗺️</div>
+                    <h3>MapQuest for Couples</h3>
+                    <p>Interactive game with 3 modes (Discovery/Growth/Intimacy) and 3 depths. Guess → Answer → Rate → Reflect cycle to learn about each other.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">📸</div>
+                    <h3>Photo Gallery</h3>
+                    <p>Upload couple photos, add captions, and set a favorite photo to display on your dashboard. Build your visual relationship timeline.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">👤</div>
+                    <h3>Profile Management</h3>
+                    <p>Edit your personal information, upload avatar, update relationship details, and manage account settings.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="icon">🛠️</div>
+                    <h3>Dev Chat Simulator</h3>
+                    <p>Testing tool to create simulated conversations with custom personalities, scenarios, and communication styles for AI evaluation.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MapQuest Detailed Flow -->
+        <div class="flow-section">
+            <h2 class="section-title">🗺️ MapQuest Game Flow (Detailed)</h2>
+
+            <div class="flow-container">
+                <div class="flow-box feature">
+                    <h3>Choose Mode</h3>
+                    <p>Discovery / Growth / Intimacy</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box feature">
+                    <h3>Set Depth</h3>
+                    <p>Light / Medium / Deep questions</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box feature">
+                    <h3>📝 Partner A Answers</h3>
+                    <p>Private answer saved</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box feature">
+                    <h3>🤔 Partner B Guesses</h3>
+                    <p>What did Partner A say?</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box feature">
+                    <h3>⭐ Rate the Guess</h3>
+                    <p>Nailed It / Close / Partly Right / New Discovery</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box feature">
+                    <h3>💭 AI Reflection</h3>
+                    <p>Discuss what you learned together</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="decision">
+                    <div>Continue?</div>
+                </div>
+
+                <div class="branch-container">
+                    <div class="branch">
+                        <span class="branch-label">Yes - More Rounds</span>
+                        <div class="flow-box feature">
+                            <h3>🔄 Next Round</h3>
+                            <p>Roles swap</p>
+                        </div>
+                    </div>
+
+                    <div class="branch">
+                        <span class="branch-label">No - End Session</span>
+                        <div class="flow-box feature">
+                            <h3>📊 Session Summary</h3>
+                            <p>AI insights & patterns</p>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box end">
+                    <h3>↩️ Back to Dashboard</h3>
+                    <p>Access other features</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Flow -->
+        <div class="flow-section">
+            <h2 class="section-title">💬 Conflict Chat Flow</h2>
+
+            <div class="flow-container">
+                <div class="flow-box feature">
+                    <h3>Open Chat</h3>
+                    <p>Real-time 3-way conversation</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-row">
+                    <div class="flow-box feature">
+                        <h3>👤 Partner A sends message</h3>
+                        <p>Stored in database</p>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="flow-box feature">
+                        <h3>🤖 AI Mediator responds</h3>
+                        <p>EFT-based mediation</p>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="flow-box feature">
+                        <h3>👥 Partner B sees both</h3>
+                        <p>Real-time Supabase updates</p>
+                    </div>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box feature">
+                    <h3>🔄 Continuous Loop</h3>
+                    <p>Partners alternate, AI facilitates</p>
+                </div>
+
+                <span class="arrow arrow-down">→</span>
+
+                <div class="flow-box end">
+                    <h3>↩️ Back to Dashboard</h3>
+                    <p>Chat saved, can resume anytime</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                <span>Landing/Start</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                <span>Authentication</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                <span>Setup/Onboarding</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                <span>Dashboard</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"></div>
+                <span>Features</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-box" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);"></div>
+                <span>Return Point</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

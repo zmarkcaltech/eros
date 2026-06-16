@@ -1,0 +1,230 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 2400">
+  <defs>
+    <style>
+      .box { fill: #667eea; stroke: #764ba2; stroke-width: 2; }
+      .box-start { fill: #f5576c; }
+      .box-auth { fill: #4facfe; }
+      .box-setup { fill: #43e97b; }
+      .box-dashboard { fill: #fa709a; }
+      .box-feature { fill: #30cfd0; }
+      .text { fill: white; font-family: Arial, sans-serif; font-size: 16px; text-anchor: middle; font-weight: bold; }
+      .text-small { fill: white; font-family: Arial, sans-serif; font-size: 12px; text-anchor: middle; }
+      .arrow { stroke: #764ba2; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+      .decision { fill: #ffecd2; stroke: #fcb69f; stroke-width: 2; }
+      .decision-text { fill: #333; font-family: Arial, sans-serif; font-size: 14px; text-anchor: middle; font-weight: bold; }
+      .label { fill: #667eea; font-family: Arial, sans-serif; font-size: 12px; text-anchor: middle; font-weight: bold; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#764ba2" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="40" style="font-size: 32px; font-weight: bold; fill: #667eea; text-anchor: middle;">Eros User Flow</text>
+  <text x="600" y="70" style="font-size: 18px; fill: #666; text-anchor: middle;">AI Couples Communication Assistant</text>
+
+  <!-- Landing Page -->
+  <rect class="box box-start" x="450" y="100" width="300" height="70" rx="10"/>
+  <text class="text" x="600" y="130">🏠 Landing Page</text>
+  <text class="text-small" x="600" y="150">Features & How It Works</text>
+
+  <!-- Arrow down -->
+  <line class="arrow" x1="600" y1="170" x2="600" y2="200"/>
+
+  <!-- Decision: New or Existing -->
+  <polygon class="decision" points="600,230 700,280 600,330 500,280"/>
+  <text class="decision-text" x="600" y="280">New User or</text>
+  <text class="decision-text" x="600" y="295">Existing?</text>
+
+  <!-- Branch: Sign Up (Left) -->
+  <line class="arrow" x1="500" y1="280" x2="300" y2="280"/>
+  <line class="arrow" x1="300" y1="280" x2="300" y2="370"/>
+  <text class="label" x="300" y="270">New</text>
+
+  <rect class="box box-auth" x="150" y="370" width="300" height="70" rx="10"/>
+  <text class="text" x="300" y="400">📝 Sign Up</text>
+  <text class="text-small" x="300" y="420">Create account</text>
+
+  <line class="arrow" x1="300" y1="440" x2="300" y2="470"/>
+
+  <rect class="box box-setup" x="150" y="470" width="300" height="70" rx="10"/>
+  <text class="text" x="300" y="500">👤 Profile Setup</text>
+  <text class="text-small" x="300" y="520">Name, age, pronouns</text>
+
+  <line class="arrow" x1="300" y1="540" x2="300" y2="570"/>
+  <line class="arrow" x1="300" y1="570" x2="600" y2="570"/>
+
+  <!-- Branch: Login (Right) -->
+  <line class="arrow" x1="700" y1="280" x2="900" y2="280"/>
+  <line class="arrow" x1="900" y1="280" x2="900" y2="370"/>
+  <text class="label" x="900" y="270">Existing</text>
+
+  <rect class="box box-auth" x="750" y="370" width="300" height="70" rx="10"/>
+  <text class="text" x="900" y="400">🔐 Login</text>
+  <text class="text-small" x="900" y="420">Email + password</text>
+
+  <line class="arrow" x1="900" y1="440" x2="900" y2="570"/>
+  <line class="arrow" x1="900" y1="570" x2="600" y2="570"/>
+
+  <!-- Link Partner -->
+  <line class="arrow" x1="600" y1="570" x2="600" y2="610"/>
+
+  <rect class="box box-setup" x="450" y="610" width="300" height="70" rx="10"/>
+  <text class="text" x="600" y="640">🔗 Link Partner</text>
+  <text class="text-small" x="600" y="660">Generate/enter code</text>
+
+  <line class="arrow" x1="600" y1="680" x2="600" y2="720"/>
+
+  <!-- Relationship Setup -->
+  <rect class="box box-setup" x="450" y="720" width="300" height="70" rx="10"/>
+  <text class="text" x="600" y="750">💑 Relationship Setup</text>
+  <text class="text-small" x="600" y="770">Duration, goals, how you met</text>
+
+  <line class="arrow" x1="600" y1="790" x2="600" y2="830"/>
+
+  <!-- Dashboard -->
+  <rect class="box box-dashboard" x="400" y="830" width="400" height="90" rx="10"/>
+  <text class="text" x="600" y="865" style="font-size: 20px;">🎯 DASHBOARD</text>
+  <text class="text-small" x="600" y="895">Your relationship hub</text>
+
+  <line class="arrow" x1="600" y1="920" x2="600" y2="960"/>
+
+  <!-- Features Title -->
+  <text x="600" y="990" style="font-size: 20px; font-weight: bold; fill: #764ba2; text-anchor: middle;">Choose a Feature</text>
+
+  <!-- Feature 1: Chat -->
+  <rect class="box box-feature" x="50" y="1020" width="200" height="80" rx="8"/>
+  <text class="text" x="150" y="1050" style="font-size: 14px;">💬 Chat</text>
+  <text class="text-small" x="150" y="1075">3-way conversation</text>
+  <text class="text-small" x="150" y="1090">with AI mediator</text>
+
+  <!-- Feature 2: MapQuest -->
+  <rect class="box box-feature" x="280" y="1020" width="200" height="80" rx="8"/>
+  <text class="text" x="380" y="1050" style="font-size: 14px;">🗺️ MapQuest</text>
+  <text class="text-small" x="380" y="1075">Guess-reveal-reflect</text>
+  <text class="text-small" x="380" y="1090">relationship game</text>
+
+  <!-- Feature 3: Photos -->
+  <rect class="box box-feature" x="510" y="1020" width="200" height="80" rx="8"/>
+  <text class="text" x="610" y="1050" style="font-size: 14px;">📸 Photos</text>
+  <text class="text-small" x="610" y="1075">Upload & manage</text>
+  <text class="text-small" x="610" y="1090">couple photos</text>
+
+  <!-- Feature 4: Profile -->
+  <rect class="box box-feature" x="740" y="1020" width="200" height="80" rx="8"/>
+  <text class="text" x="840" y="1050" style="font-size: 14px;">👤 Profile</text>
+  <text class="text-small" x="840" y="1075">Edit personal</text>
+  <text class="text-small" x="840" y="1090">information</text>
+
+  <!-- Feature 5: Dev -->
+  <rect class="box box-feature" x="970" y="1020" width="200" height="80" rx="8"/>
+  <text class="text" x="1070" y="1050" style="font-size: 14px;">🛠️ Dev Tools</text>
+  <text class="text-small" x="1070" y="1075">Test AI mediator</text>
+  <text class="text-small" x="1070" y="1090">with simulations</text>
+
+  <!-- Arrows from features back to dashboard -->
+  <line class="arrow" x1="150" y1="1100" x2="150" y2="1150"/>
+  <line class="arrow" x1="150" y1="1150" x2="500" y2="1150"/>
+
+  <line class="arrow" x1="380" y1="1100" x2="380" y2="1130"/>
+  <line class="arrow" x1="380" y1="1130" x2="550" y2="1130"/>
+
+  <line class="arrow" x1="610" y1="1100" x2="610" y2="1110"/>
+  <line class="arrow" x1="610" y1="1110" x2="600" y2="1110"/>
+
+  <line class="arrow" x1="840" y1="1100" x2="840" y2="1130"/>
+  <line class="arrow" x1="840" y1="1130" x2="650" y2="1130"/>
+
+  <line class="arrow" x1="1070" y1="1100" x2="1070" y2="1150"/>
+  <line class="arrow" x1="1070" y1="1150" x2="700" y2="1150"/>
+
+  <line class="arrow" x1="600" y1="1150" x2="600" y2="1200"/>
+
+  <!-- Return to Dashboard -->
+  <rect class="box box-dashboard" x="450" y="1200" width="300" height="70" rx="10"/>
+  <text class="text" x="600" y="1230">↩️ Return to Dashboard</text>
+  <text class="text-small" x="600" y="1250">Access any feature</text>
+
+  <!-- MapQuest Detail Section -->
+  <text x="600" y="1320" style="font-size: 20px; font-weight: bold; fill: #764ba2; text-anchor: middle;">MapQuest Game Detail</text>
+
+  <rect class="box box-feature" x="450" y="1350" width="300" height="60" rx="8"/>
+  <text class="text" x="600" y="1375" style="font-size: 14px;">Choose Mode & Depth</text>
+  <text class="text-small" x="600" y="1395">Discovery/Growth/Intimacy</text>
+
+  <line class="arrow" x1="600" y1="1410" x2="600" y2="1440"/>
+
+  <rect class="box box-feature" x="450" y="1440" width="300" height="60" rx="8"/>
+  <text class="text" x="600" y="1465" style="font-size: 14px;">📝 Partner Answers</text>
+  <text class="text-small" x="600" y="1485">Private answer saved</text>
+
+  <line class="arrow" x1="600" y1="1500" x2="600" y2="1530"/>
+
+  <rect class="box box-feature" x="450" y="1530" width="300" height="60" rx="8"/>
+  <text class="text" x="600" y="1555" style="font-size: 14px;">🤔 Partner Guesses</text>
+  <text class="text-small" x="600" y="1575">What did they say?</text>
+
+  <line class="arrow" x1="600" y1="1590" x2="600" y2="1620"/>
+
+  <rect class="box box-feature" x="450" y="1620" width="300" height="60" rx="8"/>
+  <text class="text" x="600" y="1645" style="font-size: 14px;">⭐ Rate Guess</text>
+  <text class="text-small" x="600" y="1665">Nailed It / Close / New</text>
+
+  <line class="arrow" x1="600" y1="1680" x2="600" y2="1710"/>
+
+  <rect class="box box-feature" x="450" y="1710" width="300" height="60" rx="8"/>
+  <text class="text" x="600" y="1735" style="font-size: 14px;">💭 AI Reflection</text>
+  <text class="text-small" x="600" y="1755">Discuss what you learned</text>
+
+  <line class="arrow" x1="600" y1="1770" x2="600" y2="1810"/>
+
+  <!-- Continue decision -->
+  <polygon class="decision" points="600,1840 700,1890 600,1940 500,1890"/>
+  <text class="decision-text" x="600" y="1890">Continue to</text>
+  <text class="decision-text" x="600" y="1905">next round?</text>
+
+  <!-- Yes branch - loop back -->
+  <line class="arrow" x1="500" y1="1890" x2="400" y2="1890"/>
+  <line class="arrow" x1="400" y1="1890" x2="400" y2="1380"/>
+  <line class="arrow" x1="400" y1="1380" x2="450" y2="1380"/>
+  <text class="label" x="350" y="1635">Yes</text>
+
+  <!-- No branch - end session -->
+  <line class="arrow" x1="700" y1="1890" x2="800" y2="1890"/>
+  <line class="arrow" x1="800" y1="1890" x2="800" y2="2020"/>
+  <text class="label" x="850" y="1950">No</text>
+
+  <rect class="box box-feature" x="650" y="2020" width="300" height="70" rx="8"/>
+  <text class="text" x="800" y="2050">📊 Session Summary</text>
+  <text class="text-small" x="800" y="2070">AI insights & patterns</text>
+
+  <line class="arrow" x1="650" y1="2055" x2="600" y2="2055"/>
+  <line class="arrow" x1="600" y1="2055" x2="600" y2="2130"/>
+
+  <!-- Final return -->
+  <rect class="box box-dashboard" x="450" y="2130" width="300" height="70" rx="10"/>
+  <text class="text" x="600" y="2160">↩️ Back to Dashboard</text>
+  <text class="text-small" x="600" y="2180">Start another feature</text>
+
+  <!-- Legend -->
+  <rect x="50" y="2250" width="1100" height="120" fill="#f5f5f5" stroke="#ddd" stroke-width="1" rx="8"/>
+  <text x="600" y="2280" style="font-size: 16px; font-weight: bold; fill: #333; text-anchor: middle;">Legend</text>
+
+  <rect class="box box-start" x="80" y="2300" width="100" height="30" rx="5"/>
+  <text x="135" y="2340" style="font-size: 12px; fill: #333; text-anchor: middle;">Start</text>
+
+  <rect class="box box-auth" x="220" y="2300" width="100" height="30" rx="5"/>
+  <text x="275" y="2340" style="font-size: 12px; fill: #333; text-anchor: middle;">Auth</text>
+
+  <rect class="box box-setup" x="360" y="2300" width="100" height="30" rx="5"/>
+  <text x="415" y="2340" style="font-size: 12px; fill: #333; text-anchor: middle;">Setup</text>
+
+  <rect class="box box-dashboard" x="500" y="2300" width="100" height="30" rx="5"/>
+  <text x="555" y="2340" style="font-size: 12px; fill: #333; text-anchor: middle;">Dashboard</text>
+
+  <rect class="box box-feature" x="640" y="2300" width="100" height="30" rx="5"/>
+  <text x="695" y="2340" style="font-size: 12px; fill: #333; text-anchor: middle;">Feature</text>
+
+  <polygon class="decision" points="820,2315 870,2330 820,2345 770,2330"/>
+  <text x="825" y="2340" style="font-size: 12px; fill: #333; text-anchor: middle;">Decision</text>
+</svg>
