@@ -32,21 +32,99 @@ flowchart TD
 
     BasicInfo --> Intent{Step 2: What brings you here?<br/>Progress: 3/5}
 
-    Intent -->|Work on conflict| IntentConflict[Great! Eros helps couples<br/>communicate during tough moments]
-    Intent -->|Deepen connection| IntentConnection[Awesome! Eros has exercises<br/>to strengthen your bond]
-    Intent -->|Learn about partner| IntentLearn[Perfect! MapQuest helps you<br/>discover new things together]
-    Intent -->|Just exploring| IntentExplore[Welcome! Take a tour<br/>and see what resonates]
+    Intent -->|Work on conflict| ConflictFollowup
+    Intent -->|Deepen connection| ConnectionFollowup
+    Intent -->|Learn about partner| LearnFollowup
+    Intent -->|Just exploring| ExploreFollowup
 
-    IntentConflict --> QuickValue
-    IntentConnection --> QuickValue
-    IntentLearn --> QuickValue
-    IntentExplore --> QuickValue
+    ConflictFollowup[Great! Let's understand<br/>your conflict patterns]
+    ConflictFollowup --> ConflictQ1{What types of conflicts<br/>come up most often?<br/>OPTIONAL - Can skip all}
 
-    QuickValue[Step 3: Quick Value Demo<br/>🎁 Try a sample question!<br/>Progress: 4/5]
+    ConflictQ1 -->|Answer| ConflictType[Select all that apply:<br/>□ Daily frustrations<br/>□ Big disagreements<br/>□ Same issues repeatedly<br/>□ Communication breakdown<br/>□ Other]
+    ConflictQ1 -->|Skip| InvitePartner
 
-    QuickValue --> SampleQuestion[Interactive Preview:<br/>Answer 1 relationship question<br/>See AI reflection example]
+    ConflictType --> ConflictQ2{How often do conflicts happen?<br/>OPTIONAL}
 
-    SampleQuestion --> InvitePartner[Step 4: Invite Your Partner<br/>Progress: 5/5]
+    ConflictQ2 -->|Answer| ConflictFreq[○ Daily<br/>○ Few times a week<br/>○ Weekly<br/>○ Few times a month<br/>○ Rarely]
+    ConflictQ2 -->|Skip| InvitePartner
+
+    ConflictFreq --> ConflictQ3{When you disagree,<br/>what usually happens?<br/>OPTIONAL}
+
+    ConflictQ3 -->|Answer| ConflictPattern[○ We both get heated<br/>○ One talks, one withdraws<br/>○ We avoid talking about it<br/>○ One gets defensive, one attacks<br/>○ It escalates quickly<br/>○ We talk it through calmly]
+    ConflictQ3 -->|Skip| InvitePartner
+
+    ConflictPattern --> ConflictQ4{What would success look like?<br/>OPTIONAL}
+
+    ConflictQ4 -->|Answer| ConflictGoal[Free text:<br/>e.g., "Stay calm during disagreements"<br/>"Actually resolve issues"<br/>"Feel heard"]
+    ConflictQ4 -->|Skip| InvitePartner
+
+    ConflictGoal --> InvitePartner
+
+    ConnectionFollowup[Awesome! Let's learn about<br/>your connection goals]
+    ConnectionFollowup --> ConnectionQ1{What's working well<br/>in your relationship?<br/>OPTIONAL - Can skip all}
+
+    ConnectionQ1 -->|Answer| ConnectionStrength[Select all that apply:<br/>□ We laugh together<br/>□ We support each other<br/>□ Good physical intimacy<br/>□ Share values<br/>□ Trust each other<br/>□ Other]
+    ConnectionQ1 -->|Skip| InvitePartner
+
+    ConnectionStrength --> ConnectionQ2{What do you want more of?<br/>OPTIONAL}
+
+    ConnectionQ2 -->|Answer| ConnectionDesire[Select all that apply:<br/>□ Quality time together<br/>□ Deeper conversations<br/>□ Physical affection<br/>□ Adventure/fun<br/>□ Understanding each other<br/>□ Intimacy]
+    ConnectionQ2 -->|Skip| InvitePartner
+
+    ConnectionDesire --> ConnectionQ3{How long have you<br/>been together?<br/>OPTIONAL}
+
+    ConnectionQ3 -->|Answer| ConnectionDuration[○ Less than 6 months<br/>○ 6 months - 1 year<br/>○ 1-3 years<br/>○ 3-5 years<br/>○ 5+ years]
+    ConnectionQ3 -->|Skip| InvitePartner
+
+    ConnectionDuration --> ConnectionQ4{What does a great day<br/>together look like?<br/>OPTIONAL}
+
+    ConnectionQ4 -->|Answer| ConnectionIdeal[Free text:<br/>e.g., "Lazy morning, coffee, talking"<br/>"Adventure then quiet evening"]
+    ConnectionQ4 -->|Skip| InvitePartner
+
+    ConnectionIdeal --> InvitePartner
+
+    LearnFollowup[Perfect! Let's explore<br/>your curiosity]
+    LearnFollowup --> LearnQ1{How long have you<br/>been together?<br/>OPTIONAL - Can skip all}
+
+    LearnQ1 -->|Answer| LearnDuration[○ Less than 6 months<br/>○ 6 months - 1 year<br/>○ 1-3 years<br/>○ 3-5 years<br/>○ 5+ years]
+    LearnQ1 -->|Skip| InvitePartner
+
+    LearnDuration --> LearnQ2{What do you want to<br/>discover about your partner?<br/>OPTIONAL}
+
+    LearnQ2 -->|Answer| LearnTopics[Select all that apply:<br/>□ Their dreams & goals<br/>□ Their past experiences<br/>□ What makes them happy<br/>□ Their fears & worries<br/>□ Daily life & preferences<br/>□ Deeper emotions]
+    LearnQ2 -->|Skip| InvitePartner
+
+    LearnTopics --> LearnQ3{How well do you feel<br/>you know your partner?<br/>OPTIONAL}
+
+    LearnQ3 -->|Answer| LearnDepth[○ Very well - want to go deeper<br/>○ Pretty well - some gaps<br/>○ Somewhat - lots to learn<br/>○ Just getting to know them]
+    LearnQ3 -->|Skip| InvitePartner
+
+    LearnDepth --> LearnQ4{Are there topics that<br/>feel hard to talk about?<br/>OPTIONAL}
+
+    LearnQ4 -->|Answer| LearnBarriers[Free text:<br/>e.g., "Future plans"<br/>"Family stuff"<br/>"Feelings"]
+    LearnQ4 -->|Skip| InvitePartner
+
+    LearnBarriers --> InvitePartner
+
+    ExploreFollowup[Welcome! Let's see<br/>what you're curious about]
+    ExploreFollowup --> ExploreQ1{Have you tried relationship<br/>apps or therapy before?<br/>OPTIONAL - Can skip all}
+
+    ExploreQ1 -->|Answer| ExplorePast[○ Yes, couples therapy<br/>○ Yes, relationship apps<br/>○ Yes, both<br/>○ No, this is new for us]
+    ExploreQ1 -->|Skip| InvitePartner
+
+    ExplorePast --> ExploreQ2{What are you hoping<br/>to find here?<br/>OPTIONAL}
+
+    ExploreQ2 -->|Answer| ExploreHope[Select all that apply:<br/>□ Better communication tools<br/>□ Fun relationship activities<br/>□ Help during conflicts<br/>□ Deeper understanding<br/>□ Just curious about AI<br/>□ Not sure yet]
+    ExploreQ2 -->|Skip| InvitePartner
+
+    ExploreHope --> ExploreQ3{Is there anything specific<br/>you'd like help with?<br/>OPTIONAL}
+
+    ExploreQ3 -->|Answer| ExploreSpecific[Free text:<br/>e.g., "We keep having same fight"<br/>"Want to feel closer"]
+    ExploreQ3 -->|Skip| InvitePartner
+
+    ExploreSpecific --> InvitePartner
+
+    InvitePartner[Step 3: Invite Your Partner<br/>Progress: 4/5]
 
     InvitePartner --> InviteMethod{How do you want to invite them?}
 
@@ -137,29 +215,48 @@ flowchart TD
 - No lengthy forms upfront
 - Get users into the experience ASAP
 
-### 2. **Intent Detection**
+### 2. **Intent Detection with Follow-up Questions**
 - Ask "What brings you here?" to customize messaging
-- Tailor content to user's specific goal
-- Makes experience feel personalized
+- Branch into personalized follow-up questions based on intent
+- All follow-up questions are OPTIONAL (can skip any or all)
+- Gather context to personalize AI responses later
+- Makes experience feel conversational, not interrogative
 
-### 3. **Quick Value Demo** 🎁
-- Show value BEFORE asking for commitment
-- Interactive sample question with AI reflection
-- Users see what they're signing up for
-- "Aha moment" early in flow
+**If "Work on conflict":**
+- What types of conflicts? (daily frustrations, big disagreements, etc.)
+- How often do conflicts happen?
+- What usually happens when you disagree? (escalation pattern)
+- What would success look like?
 
-### 4. **Flexible Partner Invitation**
+**If "Deepen connection":**
+- What's working well in your relationship?
+- What do you want more of? (quality time, deeper talks, etc.)
+- How long have you been together?
+- What does a great day together look like?
+
+**If "Learn about partner":**
+- How long have you been together?
+- What do you want to discover? (dreams, past, emotions, etc.)
+- How well do you feel you know them?
+- Are there topics that feel hard to talk about?
+
+**If "Just exploring":**
+- Have you tried relationship apps or therapy before?
+- What are you hoping to find here?
+- Is there anything specific you'd like help with?
+
+### 3. **Flexible Partner Invitation**
 - Multiple invitation methods (link, email, code)
 - Allow "skip for now" - don't force it
 - Users can proceed even if partner hasn't joined yet
 
-### 5. **Solo Experience While Waiting**
+### 4. **Solo Experience While Waiting**
 - Provide value even when partner hasn't joined
 - Solo exercises: reflection prompts, goal setting
 - Prepare for first conversation together
 - Reduces drop-off during waiting period
 
-### 6. **Progressive Relationship Questions**
+### 5. **Progressive Relationship Questions**
 - ONE question at a time (not overwhelming form)
 - Optional - can skip and add later
 - Shows progress (Q1/5, Q2/5, etc.)
