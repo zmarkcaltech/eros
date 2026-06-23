@@ -195,6 +195,28 @@ Eros personalizes its mediation approach by gathering and utilizing data across 
 
 ## Database Schema
 
+### Modifications to Existing Tables
+
+#### Update `profiles` table - Add conflict resolution preferences
+
+```sql
+-- Add columns to store user's conflict resolution preferences from onboarding
+ALTER TABLE profiles
+  ADD COLUMN conflict_resolution_preferences TEXT[] DEFAULT '{}';
+  -- Populated from onboarding question: "How do you typically resolve conflicts best?"
+  -- Options: 'talk_right_away', 'cool_down_first', 'need_space',
+  --          'process_alone_first', 'write_first', 'sleep_on_it'
+
+-- Example data:
+-- User who selected "Take time to cool down first" and "Process alone then come together"
+-- would have: ['cool_down_first', 'process_alone_first']
+```
+
+**Why this matters:**
+Eros uses these preferences to personalize mediation recommendations. If both partners typically prefer "cool down first", Eros is more likely to recommend a break even if safety flags don't require it.
+
+---
+
 ### New Tables
 
 #### 1. `conflict_incidents` - Track each conflict event
@@ -298,6 +320,16 @@ CREATE TABLE conflict_intake_responses (
   substance_involved BOOLEAN NOT NULL DEFAULT false,
     -- "Was alcohol or substance use involved in this conflict?"
 
+  -- NEW: Urgency and readiness questions
+  urgency_to_resolve INTEGER NOT NULL CHECK (urgency_to_resolve BETWEEN 1 AND 10),
+    -- "How urgently do you feel you need to resolve this? 1 = can wait, 10 = need to talk now"
+
+  how_triggered INTEGER NOT NULL CHECK (how_triggered BETWEEN 1 AND 10),
+    -- "How triggered/activated do you feel right now? 1 = calm, 10 = extremely upset"
+
+  preferred_next_step TEXT[] DEFAULT '{}',  -- Multi-select preferences
+    -- Options: 'talk_now', 'take_break', 'process_alone_first', 'not_sure'
+
   -- Additional context
   what_you_need_right_now TEXT,             -- Free text: "What do you need right now?"
   anything_else TEXT,                       -- Open-ended
@@ -323,7 +355,14 @@ CREATE POLICY "Users can create their own intake responses"
 
 ---
 
-#### 3. `conflict_safety_evaluations` - Eros's assessment
+#### 3. `conflict_safety_evaluations` - Eros's personalized recommendation
+
+**Note:** This is now a RECOMMENDATION ENGINE, not just safety assessment. It considers:
+- Safety flags (critical)
+- User personality and preferences (from onboarding)
+- Historical patterns (what's worked before)
+- Current emotional state and urgency
+- User's stated preferences for next step
 
 ```sql
 CREATE TABLE conflict_safety_evaluations (
@@ -343,18 +382,36 @@ CREATE TABLE conflict_safety_evaluations (
     -- Possible values: 'physical_safety', 'emotional_abuse', 'substance_use',
     --                  'extreme_intensity', 'relationship_threat', 'chronic_pattern'
 
-  -- AI's reasoning (for transparency and debugging)
-  evaluation_reasoning TEXT NOT NULL,
-    -- Natural language explanation of why this assessment was made
-
-  -- Recommended next steps
-  recommended_action TEXT NOT NULL CHECK (recommended_action IN (
+  -- PRIMARY RECOMMENDATION (based on safety + personality + history)
+  primary_recommendation TEXT NOT NULL CHECK (primary_recommendation IN (
     'professional_help',     -- Refer to therapist
     'crisis_resources',      -- Provide crisis hotline info
     'take_break',            -- Suggest 24-48 hour cooling period
     'solo_conversations',    -- More individual processing needed
     'joint_mediation'        -- Safe to proceed with 3-way chat
   )),
+
+  -- ALTERNATIVE OPTIONS (user can choose if they disagree with primary)
+  alternative_options TEXT[] DEFAULT '{}',
+    -- e.g., if primary is 'take_break', alternatives might be ['solo_conversations', 'joint_mediation']
+    -- NEVER include options that violate safety (e.g., if crisis, no alternatives offered)
+
+  -- Personalization factors considered
+  personalization_factors JSONB NOT NULL,
+    -- Explains WHY this recommendation was made, including:
+    -- {
+    --   "safety_factors": ["intensity both 8+", "chronic pattern"],
+    --   "personality_factors": ["both prefer cool_down_first", "Partner A prefers process_alone_first"],
+    --   "history_factors": ["last 3 conflicts resolved better after break"],
+    --   "current_state_factors": ["both highly triggered (8+ / 10)", "urgency moderate (5/10)"],
+    --   "user_preferences": ["Partner A wants talk_now", "Partner B wants take_break"]
+    -- }
+
+  -- AI's reasoning (natural language for users)
+  evaluation_reasoning TEXT NOT NULL,
+    -- User-friendly explanation: "I recommend taking a break because you're both
+    -- feeling very triggered right now (8/10), and I've noticed you both typically
+    -- resolve conflicts better after some cooling down time."
 
   -- If professional help recommended
   professional_help_resources JSONB,
@@ -788,7 +845,35 @@ stateDiagram-v2
    ○ Yes
    ```
 
-10. **What do you need right now?** (Free text)
+10. **How urgently do you need to resolve this?** (Urgency assessment)
+    ```
+    On a scale of 1-10, how urgently do you feel you need to resolve this?
+    1 = Can wait, not pressing    10 = Need to talk about this right now
+
+    [Slider: 1 ──────●──────── 10]
+    ```
+
+11. **How triggered are you right now?** (Emotional readiness)
+    ```
+    On a scale of 1-10, how triggered or activated do you feel right now?
+    1 = Calm, grounded    10 = Extremely upset, can't think clearly
+
+    [Slider: 1 ──────●──────── 10]
+    ```
+
+12. **What feels right for you next?** (User preference)
+    ```
+    What would feel most helpful for you right now? (Select all that apply)
+
+    □ I want to talk about this together now
+    □ I need to take a break first
+    □ I want to process this alone before talking
+    □ I'm not sure what I need
+
+    (This won't lock you in - just helps me understand what feels right to you)
+    ```
+
+13. **What do you need right now?** (Free text)
     ```
     What do you need right now?
     (e.g., "I need them to listen", "I need space", "I need to feel heard")
@@ -796,7 +881,7 @@ stateDiagram-v2
     [Text area]
     ```
 
-11. **Anything else?** (Optional)
+14. **Anything else?** (Optional)
     ```
     Is there anything else I should know?
 
@@ -818,6 +903,9 @@ stateDiagram-v2
   "need_immediate_break": false,
   "thoughts_of_ending_relationship": false,
   "substance_involved": false,
+  "urgency_to_resolve": 6,
+  "how_triggered": 8,
+  "preferred_next_step": ["process_alone_first", "take_break"],
   "what_you_need_right_now": "I need them to listen without getting defensive",
   "anything_else": null
 }
@@ -1095,114 +1183,161 @@ ELSE:
 
 ##### Outcome A: Joint Mediation Ready ✅
 
-**UI: Both partners notified**
+**UI: Both partners notified with RECOMMENDATION + OPTIONS**
 ```
 ┌────────────────────────────────────────┐
-│  ✅ Ready for Conversation              │
+│  ✅ My Recommendation: Talk Together    │
 │                                        │
-│  I've heard from both of you, and I    │
-│  think you're ready to talk together.  │
+│  I've heard from both of you, and      │
+│  based on what you've shared, I think  │
+│  you're ready to talk together.        │
 │                                        │
-│  I'll be here to facilitate and help   │
-│  you both feel heard.                  │
+│  Why I'm recommending this:            │
+│  • You're both feeling calm enough     │
+│    (triggered level: 4/10 and 5/10)    │
+│  • You both want to talk it through    │
+│  • This topic hasn't escalated before  │
 │                                        │
-│  [Start 3-Way Conversation]            │
+│  ┌──────────────────────────────────┐  │
+│  │  [Start 3-Way Conversation] ✨    │  │
+│  │  Recommended                      │  │
+│  └──────────────────────────────────┘  │
+│                                        │
+│  Or, if you prefer:                    │
+│  [Take a break first]                  │
+│  [Talk to me privately more]           │
+│                                        │
+│  You're in control - choose what       │
+│  feels right for you.                  │
 └────────────────────────────────────────┘
 ```
 
 **Flow:**
-- Redirect to 3-way chat interface
-- Eros opens with: "Thank you both for taking the time to share your perspectives with me. Let's work through this together. [Partner A], would you like to start by sharing how you're feeling?"
-- Standard EFT-based mediation continues
-- Messages linked to `incident_id`
+- Show primary recommendation prominently
+- Explain reasoning transparently
+- Offer alternative options (if safe to do so)
+- User CHOOSES next step - not forced
+- If they choose joint mediation:
+  - Redirect to 3-way chat interface
+  - Eros opens with: "Thank you both for taking the time to share your perspectives with me. Let's work through this together. [Partner A], would you like to start by sharing how you're feeling?"
+  - Standard EFT-based mediation continues
+  - Messages linked to `incident_id`
 
 ---
 
 ##### Outcome B: Take a Break 🕒
 
-**UI: Both partners notified**
+**UI: Both partners notified with RECOMMENDATION + OPTIONS**
 ```
 ┌────────────────────────────────────────┐
-│  🕒 Let's Take a Break                  │
+│  🕒 My Recommendation: Take a Break     │
 │                                        │
 │  Based on what you've both shared, I   │
 │  think it would be helpful to take a   │
 │  break before talking together.        │
 │                                        │
-│  Suggested break: 24 hours             │
+│  Why I'm recommending this:            │
+│  • You're both pretty triggered right  │
+│    now (8/10 and 7/10)                 │
+│  • You both typically resolve better   │
+│    after cooling down                  │
+│  • This gives you time to process      │
 │                                        │
-│  During this time:                     │
+│  ┌──────────────────────────────────┐  │
+│  │  [Take a 24-hour break] ✨        │  │
+│  │  Recommended                      │  │
+│  └──────────────────────────────────┘  │
+│                                        │
+│  Or, if you prefer:                    │
+│  [Talk to me privately more]           │
+│  [Try talking together anyway]         │
+│                                        │
+│  During a break:                       │
 │  • Give each other space               │
-│  • Do something that helps you relax   │
 │  • You can chat with me privately      │
-│    if you need support                 │
-│                                        │
-│  I'll check in with you both tomorrow. │
-│                                        │
-│  [Okay, I'll take a break]             │
-│  [Talk to Eros privately]              │
+│  • I'll check in with you tomorrow     │
 └────────────────────────────────────────┘
 ```
 
 **Follow-up:**
-- Scheduled notification after break period
+- If they choose break: Scheduled notification after break period
 - Option to extend break
 - Option to start solo conversations during break
+- User can override and choose joint mediation if they want (we trust them)
 
 ---
 
 ##### Outcome C: More Solo Conversations Needed 💭
 
-**UI: Both partners notified separately**
+**UI: Both partners notified separately with RECOMMENDATION + OPTIONS**
 ```
 ┌────────────────────────────────────────┐
-│  💭 Let's Process This More             │
+│  💭 My Recommendation: Process More     │
 │                                        │
 │  After hearing from both of you, I     │
 │  think you each need a bit more time   │
 │  to process this individually before   │
 │  talking together.                     │
 │                                        │
-│  This doesn't mean anything is wrong - │
-│  it just means we want to set you up   │
-│  for success.                          │
+│  Why I'm recommending this:            │
+│  • Your perspectives are very different│
+│  • You're both feeling defensive       │
+│  • More solo work can help you build   │
+│    empathy for each other              │
 │                                        │
-│  Would you like to continue our        │
-│  private conversation?                 │
+│  ┌──────────────────────────────────┐  │
+│  │  [Continue private chat] ✨       │  │
+│  │  Recommended                      │  │
+│  └──────────────────────────────────┘  │
 │                                        │
-│  [Yes, let's talk more]                │
-│  [I need time to think]                │
+│  Or, if you prefer:                    │
+│  [Take a break to think]               │
+│  [Try talking together now]            │
+│                                        │
+│  This isn't a setback - it's setting   │
+│  you up for success.                   │
 └────────────────────────────────────────┘
 ```
 
 **Flow:**
-- Re-open solo conversation for each partner
-- AI works with each person to:
-  - Process emotions further
-  - Build empathy for partner's perspective
-  - Practice de-escalation techniques
-  - Identify underlying needs
-- Re-evaluate when both are ready
+- If they choose solo work:
+  - Re-open solo conversation for each partner
+  - AI works with each person to:
+    - Process emotions further
+    - Build empathy for partner's perspective
+    - Practice de-escalation techniques
+    - Identify underlying needs
+  - Re-evaluate when both are ready
+- User can choose alternatives if they prefer
 
 ---
 
 ##### Outcome D: Professional Help Recommended 🏥
 
-**UI: Both partners notified (different messages)**
+**UI: Both partners notified with STRONG RECOMMENDATION + LIMITED OPTIONS**
 ```
 ┌────────────────────────────────────────┐
-│  🏥 Let's Get Professional Support      │
+│  🏥 My Recommendation: Professional Help│
 │                                        │
 │  Based on what you've both shared,     │
 │  I think this situation would benefit  │
 │  from professional support beyond what │
 │  I can provide.                        │
 │                                        │
-│  This is not a failure - it means you  │
-│  care enough about your relationship   │
-│  to get the right help.                │
+│  Why I'm recommending this:            │
+│  • This conflict has been ongoing for  │
+│    months without resolution           │
+│  • You're both considering ending the  │
+│    relationship                        │
+│  • The intensity is consistently high  │
 │                                        │
-│  Here are some resources:              │
+│  This is not a failure - it means you  │
+│  care enough to get the right help.    │
+│                                        │
+│  ┌──────────────────────────────────┐  │
+│  │  [Find a Therapist] ✨            │  │
+│  │  Strongly Recommended             │  │
+│  └──────────────────────────────────┘  │
 │                                        │
 │  📞 National Hotlines:                 │
 │  • Couples Therapy: 1-800-XXX-XXXX     │
@@ -1213,10 +1348,9 @@ ELSE:
 │  • BetterHelp                          │
 │  • Local counseling centers            │
 │                                        │
-│  I'll still be here if you need me.    │
-│                                        │
-│  [View Resources]                      │
-│  [Talk to Eros]                        │
+│  I'll still be here if you need me:    │
+│  [Talk to Eros privately]              │
+│  [Take a break for now]                │
 └────────────────────────────────────────┘
 ```
 
@@ -1226,6 +1360,8 @@ ELSE:
 - EFT therapist locator
 - Local resources based on location (if available)
 - Educational content about when to seek help
+
+**Note:** Joint mediation NOT offered as alternative when professional help recommended for safety reasons
 
 ---
 
@@ -1269,9 +1405,14 @@ ELSE:
 
 ---
 
-## Safety Evaluation Algorithm
+## Personalized Recommendation Algorithm
 
-### Risk Scoring System
+**Important:** This is now a **recommendation engine**, not just safety assessment. It generates:
+1. **Primary recommendation** based on safety + personality + history
+2. **Alternative options** (if safe to offer)
+3. **Transparent reasoning** explaining the recommendation
+
+### Step 1: Safety Assessment (Non-negotiable baseline)
 
 **Critical Red Flags (Immediate Crisis):**
 - Physical safety concern reported by either partner → CRISIS
@@ -1284,18 +1425,54 @@ ELSE:
 - Emotional safety concerns + extreme emotions → HIGH CONCERN
 - Both partners rate intensity 9-10 → HIGH CONCERN
 
-**Moderate Yellow Flags (Break or Solo Work):**
-- Both partners rate intensity 7-8 → MODERATE (break)
-- Emotional safety concerns without extreme intensity → MODERATE (solo)
-- Chronic pattern (weekly) + moderate intensity (5-6) → MODERATE (solo)
-- Conflicting narratives with blame language → MODERATE (solo)
+**Moderate Yellow Flags (May suggest Break or Solo Work):**
+- Both partners rate intensity 7-8
+- Emotional safety concerns without extreme intensity
+- Chronic pattern (weekly) + moderate intensity (5-6)
+- Conflicting narratives with blame language
 
-**Green Flags (Joint Mediation):**
+**Green Flags (Safe for Joint Mediation):**
 - No safety concerns
 - Intensity < 7 for both
 - Both emotionally ready
 - Clear needs expressed
 - Willingness to listen
+
+### Step 2: Personalization Layer (If safe, consider preferences)
+
+**Personality Factors (from onboarding):**
+- **Both prefer "cool_down_first"** → Lean toward recommending break
+- **Both prefer "talk_right_away"** → Lean toward recommending joint mediation
+- **Both prefer "process_alone_first"** → Lean toward recommending solo conversations
+- **Preferences conflict** → Consider current state and urgency
+
+**Current State Factors (from intake):**
+- **Both have high urgency (8+)** → Lean toward faster resolution (joint mediation or solo)
+- **Both highly triggered (8+)** → Lean toward break or solo work first
+- **User preferences stated** → Weight these heavily in alternatives
+  - If Partner A wants "talk_now" and Partner B wants "take_break" → Offer both as options
+
+**Historical Factors (from past conflicts):**
+- **Last 3 conflicts resolved better after breaks** → Recommend break
+- **Past solo conversations led to successful mediation** → Recommend solo work
+- **Joint mediation worked well before** → Recommend joint mediation
+
+### Step 3: Generate Recommendation + Alternatives
+
+**Decision Matrix:**
+
+| Safety Level | Personality Match | Current State | Urgency | → Primary Recommendation | Alternatives Offered |
+|--------------|------------------|---------------|---------|------------------------|---------------------|
+| Safe | Both "talk_right_away" | Low triggered | High urgency | Joint Mediation | Solo work, Break |
+| Safe | Both "cool_down_first" | High triggered | Moderate urgency | Take Break | Solo work, Joint mediation |
+| Safe | Both "process_alone_first" | Moderate triggered | Low urgency | Solo Conversations | Take break, Joint mediation |
+| Moderate concern | Mixed preferences | High triggered | Low urgency | Take Break | Solo work only |
+| High concern | Any | Any | Any | Professional Help | Solo work, Take break (NO joint mediation) |
+| Crisis | Any | Any | Any | Crisis Resources | NONE (safety emergency) |
+
+**Always respect user autonomy:**
+- Users can choose alternatives if they disagree with primary recommendation
+- Exception: NEVER offer joint mediation as alternative when professional help/crisis recommended
 
 ### Pattern Recognition
 

@@ -58,7 +58,12 @@ flowchart TD
     ConflictQ4 -->|Answer| ConflictGoal[Free text:<br/>e.g., 'Stay calm during disagreements'<br/>'Actually resolve issues'<br/>'Feel heard']
     ConflictQ4 -->|Skip| InvitePartner
 
-    ConflictGoal --> InvitePartner
+    ConflictGoal --> ConflictQ5{How do you typically<br/>resolve conflicts best?<br/>OPTIONAL}
+
+    ConflictQ5 -->|Answer| ConflictResolutionStyle[Select all that apply:<br/>□ Talk it out right away<br/>□ Take time to cool down first<br/>□ Need space before discussing<br/>□ Process alone then come together<br/>□ Write/text thoughts first<br/>□ Better after a good night's sleep]
+    ConflictQ5 -->|Skip| InvitePartner
+
+    ConflictResolutionStyle --> InvitePartner
 
     ConnectionFollowup[Awesome! Let's learn about<br/>your connection goals]
     ConnectionFollowup --> ConnectionQ1{What's working well<br/>in your relationship?<br/>OPTIONAL - Can skip all}
@@ -227,6 +232,7 @@ flowchart TD
 - How often do conflicts happen?
 - What usually happens when you disagree? (escalation pattern)
 - What would success look like?
+- How do you typically resolve conflicts best? (talk right away, cool down first, need space, etc.)
 
 **If "Deepen connection":**
 - What's working well in your relationship?
