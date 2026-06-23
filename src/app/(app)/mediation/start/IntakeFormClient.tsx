@@ -295,18 +295,281 @@ export default function IntakeFormClient({ incidentId, relationshipId }: Props) 
           </div>
         );
 
-      // Continue with remaining steps (6-14)...
-      // I'll create a condensed version for brevity
+      case 6:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Safety check: Emotional
+            </h2>
+            <p className="text-gray-600">Do you feel emotionally safe to talk about this?</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => setFormData({ ...formData, emotional_safety_concern: false })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  !formData.emotional_safety_concern
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                ✅ Yes, I feel emotionally safe
+              </button>
+              <button
+                onClick={() => setFormData({ ...formData, emotional_safety_concern: true })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  formData.emotional_safety_concern
+                    ? 'border-yellow-500 bg-yellow-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                ⚠️ No, I don't feel emotionally safe
+              </button>
+            </div>
+          </div>
+        );
 
-      default:
+      case 7:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Do you need a break right now?
+            </h2>
+            <div className="space-y-3">
+              <button
+                onClick={() => setFormData({ ...formData, need_immediate_break: false })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  !formData.need_immediate_break
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                No, I'm ready to continue
+              </button>
+              <button
+                onClick={() => setFormData({ ...formData, need_immediate_break: true })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  formData.need_immediate_break
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Yes, I need some time
+              </button>
+            </div>
+          </div>
+        );
+
+      case 8:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Relationship thoughts
+            </h2>
+            <p className="text-gray-600">Are you having thoughts about ending the relationship?</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => setFormData({ ...formData, thoughts_of_ending_relationship: false })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  !formData.thoughts_of_ending_relationship
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                No
+              </button>
+              <button
+                onClick={() => setFormData({ ...formData, thoughts_of_ending_relationship: true })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  formData.thoughts_of_ending_relationship
+                    ? 'border-red-500 bg-red-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Yes, I'm having these thoughts
+              </button>
+            </div>
+          </div>
+        );
+
+      case 9:
+        return (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Substance involvement
+            </h2>
+            <p className="text-gray-600">Was alcohol or substance use involved in this conflict?</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => setFormData({ ...formData, substance_involved: false })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  !formData.substance_involved
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                No
+              </button>
+              <button
+                onClick={() => setFormData({ ...formData, substance_involved: true })}
+                className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                  formData.substance_involved
+                    ? 'border-yellow-500 bg-yellow-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        );
+
+      case 10:
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Step {step} of {totalSteps}
+              How urgently do you need to resolve this?
             </h2>
-            <p className="text-gray-600">Additional intake questions will go here</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>1 - Can wait</span>
+                <span>10 - Need to talk now</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={formData.urgency_to_resolve}
+                onChange={(e) => setFormData({ ...formData, urgency_to_resolve: parseInt(e.target.value) })}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+              />
+              <div className="text-center">
+                <span className="text-4xl font-bold text-purple-600">{formData.urgency_to_resolve}</span>
+              </div>
+            </div>
           </div>
         );
+
+      case 11:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              How triggered are you right now?
+            </h2>
+            <p className="text-gray-600">How activated or upset do you feel?</p>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>1 - Calm, grounded</span>
+                <span>10 - Extremely upset</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="10"
+                value={formData.how_triggered}
+                onChange={(e) => setFormData({ ...formData, how_triggered: parseInt(e.target.value) })}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500"
+              />
+              <div className="text-center">
+                <span className="text-4xl font-bold text-red-600">{formData.how_triggered}</span>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 12:
+        const preferences: { value: PreferredNextStep; label: string }[] = [
+          { value: 'talk_now', label: 'I want to talk about this together now' },
+          { value: 'take_break', label: 'I need to take a break first' },
+          { value: 'process_alone_first', label: 'I want to process this alone before talking' },
+          { value: 'not_sure', label: "I'm not sure what I need" }
+        ];
+
+        return (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              What feels right for you next?
+            </h2>
+            <p className="text-gray-600">
+              Select all that apply - this won't lock you in, just helps me understand what feels right to you
+            </p>
+            <div className="space-y-3">
+              {preferences.map((pref) => {
+                const isSelected = formData.preferred_next_step?.includes(pref.value);
+                return (
+                  <button
+                    key={pref.value}
+                    onClick={() => {
+                      const current = formData.preferred_next_step || [];
+                      const updated = isSelected
+                        ? current.filter(p => p !== pref.value)
+                        : [...current, pref.value];
+                      setFormData({ ...formData, preferred_next_step: updated });
+                    }}
+                    className={`w-full p-4 text-left border-2 rounded-lg transition-colors ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div className={`w-5 h-5 rounded border-2 mr-3 flex items-center justify-center ${
+                        isSelected ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span>{pref.label}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 13:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              What do you need right now?
+            </h2>
+            <p className="text-gray-600">
+              For example: "I need them to listen", "I need space", "I need to feel heard"
+            </p>
+            <textarea
+              value={formData.what_you_need_right_now}
+              onChange={(e) => setFormData({ ...formData, what_you_need_right_now: e.target.value })}
+              className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="What do you need from your partner or this situation?"
+            />
+          </div>
+        );
+
+      case 14:
+        return (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Anything else?
+            </h2>
+            <p className="text-gray-600">
+              Is there anything else I should know? (Optional)
+            </p>
+            <textarea
+              value={formData.anything_else}
+              onChange={(e) => setFormData({ ...formData, anything_else: e.target.value })}
+              className="w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="Any additional context or information..."
+            />
+            <p className="text-sm text-gray-500">
+              Almost done! After you submit, you'll have a private conversation with me to process your emotions before we bring your partner into the conversation.
+            </p>
+          </div>
+        );
+
+      default:
+        return null;
     }
   };
 
