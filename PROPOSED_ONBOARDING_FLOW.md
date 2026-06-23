@@ -55,7 +55,7 @@ flowchart TD
 
     ConflictPattern --> ConflictQ4{What would success look like?<br/>OPTIONAL}
 
-    ConflictQ4 -->|Answer| ConflictGoal[Free text:<br/>e.g., "Stay calm during disagreements"<br/>"Actually resolve issues"<br/>"Feel heard"]
+    ConflictQ4 -->|Answer| ConflictGoal[Free text:<br/>e.g., 'Stay calm during disagreements'<br/>'Actually resolve issues'<br/>'Feel heard']
     ConflictQ4 -->|Skip| InvitePartner
 
     ConflictGoal --> InvitePartner
@@ -78,7 +78,7 @@ flowchart TD
 
     ConnectionDuration --> ConnectionQ4{What does a great day<br/>together look like?<br/>OPTIONAL}
 
-    ConnectionQ4 -->|Answer| ConnectionIdeal[Free text:<br/>e.g., "Lazy morning, coffee, talking"<br/>"Adventure then quiet evening"]
+    ConnectionQ4 -->|Answer| ConnectionIdeal[Free text:<br/>e.g., 'Lazy morning, coffee, talking'<br/>'Adventure then quiet evening']
     ConnectionQ4 -->|Skip| InvitePartner
 
     ConnectionIdeal --> InvitePartner
@@ -101,7 +101,7 @@ flowchart TD
 
     LearnDepth --> LearnQ4{Are there topics that<br/>feel hard to talk about?<br/>OPTIONAL}
 
-    LearnQ4 -->|Answer| LearnBarriers[Free text:<br/>e.g., "Future plans"<br/>"Family stuff"<br/>"Feelings"]
+    LearnQ4 -->|Answer| LearnBarriers[Free text:<br/>e.g., 'Future plans'<br/>'Family stuff'<br/>'Feelings']
     LearnQ4 -->|Skip| InvitePartner
 
     LearnBarriers --> InvitePartner
@@ -119,7 +119,7 @@ flowchart TD
 
     ExploreHope --> ExploreQ3{Is there anything specific<br/>you'd like help with?<br/>OPTIONAL}
 
-    ExploreQ3 -->|Answer| ExploreSpecific[Free text:<br/>e.g., "We keep having same fight"<br/>"Want to feel closer"]
+    ExploreQ3 -->|Answer| ExploreSpecific[Free text:<br/>e.g., 'We keep having same fight'<br/>'Want to feel closer']
     ExploreQ3 -->|Skip| InvitePartner
 
     ExploreSpecific --> InvitePartner
