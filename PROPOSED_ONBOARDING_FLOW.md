@@ -50,7 +50,7 @@ flowchart TD
 
     ConflictFreq --> ConflictQ3{When you disagree,<br/>what usually happens?<br/>OPTIONAL}
 
-    ConflictQ3 -->|Answer| ConflictPattern[○ We both get heated<br/>○ One talks, one withdraws<br/>○ We avoid talking about it<br/>○ One gets defensive, one attacks<br/>○ It escalates quickly<br/>○ We talk it through calmly]
+    ConflictQ3 -->|Answer| ConflictPattern[Select all that apply:<br/>□ We both get heated<br/>□ One talks, one withdraws<br/>□ We avoid talking about it<br/>□ One gets defensive, one attacks<br/>□ It escalates quickly<br/>□ We talk it through calmly]
     ConflictQ3 -->|Skip| InvitePartner
 
     ConflictPattern --> ConflictQ4{What would success look like?<br/>OPTIONAL}
