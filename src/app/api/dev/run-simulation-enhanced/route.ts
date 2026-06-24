@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
 
     const aiMessageLengths = mediatorMessages.map((m: Message) => m.content.split(/\s+/).length)
     const avgAiMessageLength = aiMessageLengths.length > 0
-      ? aiMessageLengths.reduce((a, b) => a + b, 0) / aiMessageLengths.length
+      ? aiMessageLengths.reduce((a: number, b: number) => a + b, 0) / aiMessageLengths.length
       : 0
     const maxAiMessageLength = aiMessageLengths.length > 0 ? Math.max(...aiMessageLengths) : 0
 

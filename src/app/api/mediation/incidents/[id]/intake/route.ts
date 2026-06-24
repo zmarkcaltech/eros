@@ -8,7 +8,7 @@ import type {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -19,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const incidentId = params.id;
+    const { id: incidentId } = await params;
 
     // Parse request body
     const body: SubmitIntakeRequest = await request.json();

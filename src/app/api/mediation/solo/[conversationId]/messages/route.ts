@@ -13,7 +13,7 @@ const anthropic = new Anthropic({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { conversationId: string } }
+  { params }: { params: Promise<{ conversationId: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -24,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const conversationId = params.conversationId;
+    const { conversationId } = await params;
 
     // Parse request body
     const body: SendSoloMessageRequest = await request.json();
