@@ -5,7 +5,7 @@ import IntakeFormClient from './IntakeFormClient';
 export default async function MediationStartPage({
   searchParams
 }: {
-  searchParams: { incident?: string };
+  searchParams: Promise<{ incident?: string }>;
 }) {
   const supabase = await createClient();
 
@@ -15,7 +15,7 @@ export default async function MediationStartPage({
     redirect('/login?redirectTo=/mediation/start');
   }
 
-  const incidentId = searchParams.incident;
+  const { incident: incidentId } = await searchParams;
   if (!incidentId) {
     redirect('/dashboard');
   }

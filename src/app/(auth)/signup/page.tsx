@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [bio, setBio] = useState('')
   const [selfDescription, setSelfDescription] = useState('')
+  const [conflictResolutionPreferences, setConflictResolutionPreferences] = useState<string[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -46,6 +47,7 @@ export default function SignupPage() {
         full_name: fullName,
         bio,
         self_description: selfDescription,
+        conflict_resolution_preferences: conflictResolutionPreferences,
       })
 
       if (profileError) throw profileError
@@ -144,6 +146,43 @@ export default function SignupPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="This helps our AI provide better advice tailored to you"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              How do you typically resolve conflicts best? (Optional)
+            </label>
+            <div className="space-y-2">
+              {[
+                { value: 'talk_right_away', label: 'Talk it out right away' },
+                { value: 'cool_down_first', label: 'Take time to cool down first' },
+                { value: 'need_space', label: 'Need space before discussing' },
+                { value: 'process_alone_first', label: 'Process alone then come together' },
+                { value: 'write_first', label: 'Write/text thoughts first' },
+                { value: 'sleep_on_it', label: 'Better after a good night\'s sleep' }
+              ].map((option) => (
+                <label key={option.value} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={conflictResolutionPreferences.includes(option.value)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setConflictResolutionPreferences([...conflictResolutionPreferences, option.value])
+                      } else {
+                        setConflictResolutionPreferences(
+                          conflictResolutionPreferences.filter(p => p !== option.value)
+                        )
+                      }
+                    }}
+                    className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              This helps our AI provide personalized recommendations during conflicts
+            </p>
           </div>
 
           {error && (
