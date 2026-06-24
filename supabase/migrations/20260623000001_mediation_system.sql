@@ -15,12 +15,6 @@ COMMENT ON COLUMN profiles.conflict_resolution_preferences IS
   'User preferences for resolving conflicts, collected during onboarding.
    Options: talk_right_away, cool_down_first, need_space, process_alone_first, write_first, sleep_on_it';
 
--- Add incident_id to relationship_messages to link messages to conflicts
-ALTER TABLE relationship_messages
-  ADD COLUMN IF NOT EXISTS incident_id UUID REFERENCES conflict_incidents(id) ON DELETE SET NULL;
-
-CREATE INDEX IF NOT EXISTS idx_messages_incident ON relationship_messages(incident_id, created_at ASC);
-
 -- ============================================================================
 -- STEP 2: Create conflict_incidents table
 -- ============================================================================
@@ -112,6 +106,12 @@ CREATE POLICY "Partners can update their relationship incidents"
         AND (r.partner_a_id = auth.uid() OR r.partner_b_id = auth.uid())
     )
   );
+
+-- Add incident_id to messages to link messages to conflicts (after conflict_incidents created)
+ALTER TABLE messages
+  ADD COLUMN IF NOT EXISTS incident_id UUID REFERENCES conflict_incidents(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_messages_incident ON messages(incident_id, created_at ASC);
 
 -- ============================================================================
 -- STEP 3: Create conflict_intake_responses table
