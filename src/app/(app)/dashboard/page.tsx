@@ -334,6 +334,80 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {/* Mediation Support */}
+          {isActive && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">Conflict Support</h2>
+              <div className="border-2 border-pink-200 rounded-lg p-6 bg-gradient-to-br from-pink-50 to-purple-50">
+                <div className="flex items-start gap-4">
+                  <div className="text-5xl">💬</div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-2">Need help with a conflict?</h3>
+                    <p className="text-gray-700 mb-4">
+                      I'll guide both of you through a structured mediation process. First, you'll each share your perspective privately,
+                      then I'll help determine the best next step based on what you both need right now.
+                    </p>
+                    <div className="space-y-2 text-sm text-gray-600 mb-6">
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>Private conversations with each partner</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>Personalized safety evaluation</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>Recommendations tailored to your situation</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <span>You decide what happens next</span>
+                      </div>
+                    </div>
+                    <form action={async () => {
+                      'use server'
+                      const supabase = await createClient()
+                      const { data: { user } } = await supabase.auth.getUser()
+
+                      if (!user) return
+
+                      // Create new incident
+                      const { data: incident } = await supabase
+                        .from('conflict_incidents')
+                        .insert({
+                          relationship_id: relationship.id,
+                          initiated_by: user.id,
+                          status: 'awaiting_partner_intake'
+                        })
+                        .select()
+                        .single()
+
+                      if (incident) {
+                        redirect(`/mediation/start?incident=${incident.id}`)
+                      }
+                    }}>
+                      <button
+                        type="submit"
+                        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-6 py-3 rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg font-semibold"
+                      >
+                        Start Mediation
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Exercises */}
           {isActive && (
             <div className="bg-white rounded-lg shadow-md p-6">
