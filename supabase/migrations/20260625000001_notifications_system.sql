@@ -41,6 +41,18 @@ BEGIN
   END IF;
 END $$;
 
+-- Clean up any invalid notifications from partial migrations
+DELETE FROM notifications WHERE type NOT IN (
+  'mediation_initiated',
+  'partner_intake_complete',
+  'both_intakes_complete',
+  'evaluation_ready',
+  'partner_ready_for_next_step',
+  'new_message',
+  'conflict_resolved',
+  'relationship_linked'
+);
+
 -- Add/update constraint on type column
 DO $$
 BEGIN
