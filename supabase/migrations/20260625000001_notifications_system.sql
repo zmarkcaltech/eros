@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_notifications_user ON notifications(user_id, created_at DESC);
-CREATE INDEX idx_notifications_unread ON notifications(user_id, read, created_at DESC);
-CREATE INDEX idx_notifications_related ON notifications(related_type, related_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_related ON notifications(related_type, related_id);
 
 COMMENT ON TABLE notifications IS 'User notifications for mediation, conversations, and relationship events';
 
@@ -54,17 +54,20 @@ COMMENT ON TABLE notifications IS 'User notifications for mediation, conversatio
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Users can only view their own notifications
+DROP POLICY IF EXISTS "Users can view own notifications" ON notifications;
 CREATE POLICY "Users can view own notifications"
   ON notifications FOR SELECT
   USING (user_id = auth.uid());
 
 -- Users can mark their own notifications as read
+DROP POLICY IF EXISTS "Users can update own notifications" ON notifications;
 CREATE POLICY "Users can update own notifications"
   ON notifications FOR UPDATE
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
 -- Service role can create notifications
+DROP POLICY IF EXISTS "Service role can insert notifications" ON notifications;
 CREATE POLICY "Service role can insert notifications"
   ON notifications FOR INSERT
   WITH CHECK (true);
