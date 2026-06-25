@@ -52,22 +52,47 @@ export default async function DashboardPage() {
     .eq('is_favorite', true)
     .single()
 
-  // Get active conflict incidents
-  const { data: activeConflicts } = await supabase
+  // Get active conflict incidents (only show if at least one partner completed intake)
+  const { data: allConflicts } = await supabase
     .from('conflict_incidents')
     .select('*')
     .eq('relationship_id', relationship.id)
     .in('status', ['awaiting_partner_intake', 'safety_evaluation', 'solo_conversations', 'joint_mediation_ready'])
     .order('created_at', { ascending: false })
 
+  // Filter to only show conflicts where at least one intake is complete
+  const activeConflicts = allConflicts?.filter(conflict =>
+    conflict.partner_a_intake_completed_at || conflict.partner_b_intake_completed_at
+  ) || []
+
+  // Get solo conversations for active conflicts to get correct IDs
+  const soloConversationMap: Record<string, string> = {}
+  if (activeConflicts.length > 0) {
+    const { data: soloConvs } = await supabase
+      .from('solo_conversations')
+      .select('incident_id, id')
+      .eq('user_id', user.id)
+      .in('incident_id', activeConflicts.map(c => c.id))
+
+    soloConvs?.forEach(conv => {
+      soloConversationMap[conv.incident_id] = conv.id
+    })
+  }
+
   // Get unread notifications
-  const { data: notifications } = await supabase
+  const { data: notifications, error: notifError } = await supabase
     .from('notifications')
     .select('*')
     .eq('user_id', user.id)
     .eq('read', false)
     .order('created_at', { ascending: false })
     .limit(10)
+
+  // Debug logging
+  if (notifError) {
+    console.error('Error fetching notifications:', notifError)
+  }
+  console.log('Notifications for user', user.id, ':', notifications)
 
   // Logout function
   const handleLogout = async () => {
@@ -394,6 +419,8 @@ export default async function DashboardPage() {
                   let nextAction = ''
                   let actionUrl = ''
 
+                  const soloConvId = soloConversationMap[conflict.id]
+
                   if (conflict.status === 'awaiting_partner_intake') {
                     if (!userCompletedIntake) {
                       statusBadge = 'Your turn - Complete intake'
@@ -403,8 +430,10 @@ export default async function DashboardPage() {
                     } else if (!partnerCompletedIntake) {
                       statusBadge = 'Waiting for partner'
                       statusColor = 'bg-yellow-100 text-yellow-800'
-                      nextAction = 'Continue Solo Conversation'
-                      actionUrl = `/mediation/solo/${conflict.id}` // Will need to fetch solo conv ID
+                      if (soloConvId) {
+                        nextAction = 'Continue Solo Conversation'
+                        actionUrl = `/mediation/solo/${soloConvId}`
+                      }
                     }
                   } else if (conflict.status === 'safety_evaluation') {
                     statusBadge = 'Eros is evaluating'
@@ -412,8 +441,10 @@ export default async function DashboardPage() {
                   } else if (conflict.status === 'solo_conversations') {
                     statusBadge = 'Continue processing'
                     statusColor = 'bg-purple-100 text-purple-800'
-                    nextAction = 'Continue Solo Work'
-                    actionUrl = `/mediation/solo/${conflict.id}`
+                    if (soloConvId) {
+                      nextAction = 'Continue Solo Work'
+                      actionUrl = `/mediation/solo/${soloConvId}`
+                    }
                   } else if (conflict.status === 'joint_mediation_ready') {
                     statusBadge = 'Recommendation ready'
                     statusColor = 'bg-green-100 text-green-800'

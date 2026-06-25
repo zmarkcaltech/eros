@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       ? relationship.partner_b_id
       : relationship.partner_a_id;
 
-    await supabase.rpc('create_notification', {
+    const { data: notifResult, error: notifError } = await supabase.rpc('create_notification', {
       p_user_id: partnerId,
       p_type: 'mediation_initiated',
       p_title: 'Your partner started mediation',
@@ -85,6 +85,12 @@ export async function POST(request: NextRequest) {
       p_action_url: `/mediation/start?incident=${incident.id}`,
       p_action_label: 'Complete Intake'
     });
+
+    if (notifError) {
+      console.error('Error creating notification:', notifError);
+    } else {
+      console.log('Created notification for partner:', partnerId, 'notification ID:', notifResult);
+    }
 
     const response: InitiateMediationResponse = {
       incident_id: incident.id,
