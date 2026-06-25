@@ -52,6 +52,23 @@ export default async function DashboardPage() {
     .eq('is_favorite', true)
     .single()
 
+  // Get active conflict incidents
+  const { data: activeConflicts } = await supabase
+    .from('conflict_incidents')
+    .select('*')
+    .eq('relationship_id', relationship.id)
+    .in('status', ['awaiting_partner_intake', 'safety_evaluation', 'solo_conversations', 'joint_mediation_ready'])
+    .order('created_at', { ascending: false })
+
+  // Get unread notifications
+  const { data: notifications } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('read', false)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
   // Logout function
   const handleLogout = async () => {
     'use server'
@@ -319,6 +336,122 @@ export default async function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Notifications */}
+          {notifications && notifications.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <span className="relative">
+                  🔔
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                </span>
+                Notifications
+              </h2>
+              <div className="space-y-3">
+                {notifications.map((notification: any) => (
+                  <div key={notification.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50 hover:bg-purple-100 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">{notification.title}</h3>
+                        <p className="text-sm text-gray-700 mb-2">{notification.message}</p>
+                        {notification.action_url && notification.action_label && (
+                          <Link
+                            href={notification.action_url}
+                            className="inline-block text-sm bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                          >
+                            {notification.action_label} →
+                          </Link>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {new Date(notification.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Active Conflicts */}
+          {activeConflicts && activeConflicts.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4">Active Mediations</h2>
+              <div className="space-y-4">
+                {activeConflicts.map((conflict: any) => {
+                  const isInitiator = conflict.initiated_by === user.id
+                  const userCompletedIntake = isInitiator
+                    ? conflict.partner_a_intake_completed_at
+                    : conflict.partner_b_intake_completed_at
+                  const partnerCompletedIntake = isInitiator
+                    ? conflict.partner_b_intake_completed_at
+                    : conflict.partner_a_intake_completed_at
+
+                  let statusBadge = ''
+                  let statusColor = ''
+                  let nextAction = ''
+                  let actionUrl = ''
+
+                  if (conflict.status === 'awaiting_partner_intake') {
+                    if (!userCompletedIntake) {
+                      statusBadge = 'Your turn - Complete intake'
+                      statusColor = 'bg-orange-100 text-orange-800'
+                      nextAction = 'Complete Intake'
+                      actionUrl = `/mediation/start?incident=${conflict.id}`
+                    } else if (!partnerCompletedIntake) {
+                      statusBadge = 'Waiting for partner'
+                      statusColor = 'bg-yellow-100 text-yellow-800'
+                      nextAction = 'Continue Solo Conversation'
+                      actionUrl = `/mediation/solo/${conflict.id}` // Will need to fetch solo conv ID
+                    }
+                  } else if (conflict.status === 'safety_evaluation') {
+                    statusBadge = 'Eros is evaluating'
+                    statusColor = 'bg-blue-100 text-blue-800'
+                  } else if (conflict.status === 'solo_conversations') {
+                    statusBadge = 'Continue processing'
+                    statusColor = 'bg-purple-100 text-purple-800'
+                    nextAction = 'Continue Solo Work'
+                    actionUrl = `/mediation/solo/${conflict.id}`
+                  } else if (conflict.status === 'joint_mediation_ready') {
+                    statusBadge = 'Recommendation ready'
+                    statusColor = 'bg-green-100 text-green-800'
+                    nextAction = 'View Recommendation'
+                    actionUrl = `/mediation/recommendation/${conflict.id}`
+                  }
+
+                  return (
+                    <div key={conflict.id} className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-gray-900">
+                              {conflict.topic || 'Conflict Mediation'}
+                            </h3>
+                            <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
+                              {statusBadge}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Started {new Date(conflict.created_at).toLocaleDateString()}
+                          </p>
+                          {nextAction && actionUrl && (
+                            <Link
+                              href={actionUrl}
+                              className="inline-block text-sm bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              {nextAction} →
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Open Chat */}
           {isActive && (

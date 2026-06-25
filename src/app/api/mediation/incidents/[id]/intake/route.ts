@@ -147,6 +147,10 @@ export async function POST(
       .select('responder_role')
       .eq('incident_id', incidentId);
 
+    const partnerId = relationship.partner_a_id === user.id
+      ? relationship.partner_b_id
+      : relationship.partner_a_id;
+
     if (bothIntakes && bothIntakes.length === 2) {
       // Both partners completed - trigger safety evaluation
       await supabase
@@ -154,7 +158,40 @@ export async function POST(
         .update({ status: 'safety_evaluation' })
         .eq('id', incidentId);
 
-      // TODO: Trigger safety evaluation (will implement in next step)
+      // Notify both partners that evaluation is running
+      await supabase.rpc('create_notification', {
+        p_user_id: user.id,
+        p_type: 'both_intakes_complete',
+        p_title: 'Eros is evaluating your conflict',
+        p_message: 'Both of you have completed the intake. Eros is now analyzing your responses to provide a personalized recommendation.',
+        p_related_type: 'conflict_incident',
+        p_related_id: incidentId,
+        p_action_url: `/mediation/recommendation/${incidentId}`,
+        p_action_label: 'View Recommendation'
+      });
+
+      await supabase.rpc('create_notification', {
+        p_user_id: partnerId,
+        p_type: 'both_intakes_complete',
+        p_title: 'Eros is evaluating your conflict',
+        p_message: 'Both of you have completed the intake. Eros is now analyzing your responses to provide a personalized recommendation.',
+        p_related_type: 'conflict_incident',
+        p_related_id: incidentId,
+        p_action_url: `/mediation/recommendation/${incidentId}`,
+        p_action_label: 'View Recommendation'
+      });
+    } else {
+      // Only one partner completed - notify the other partner
+      await supabase.rpc('create_notification', {
+        p_user_id: partnerId,
+        p_type: 'partner_intake_complete',
+        p_title: 'Your partner completed their intake',
+        p_message: 'Your partner has shared their perspective. It\'s your turn to complete the intake form.',
+        p_related_type: 'conflict_incident',
+        p_related_id: incidentId,
+        p_action_url: `/mediation/start?incident=${incidentId}`,
+        p_action_label: 'Complete Your Intake'
+      });
     }
 
     const response: SubmitIntakeResponse = {

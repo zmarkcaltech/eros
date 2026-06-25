@@ -1,6 +1,45 @@
 // Mediation System Type Definitions
 // Generated from database schema in supabase/migrations/20260623000001_mediation_system.sql
 
+// ============================================================================
+// Notification Types
+// ============================================================================
+
+export type NotificationType =
+  | 'mediation_initiated'
+  | 'partner_intake_complete'
+  | 'both_intakes_complete'
+  | 'evaluation_ready'
+  | 'partner_ready_for_next_step'
+  | 'new_message'
+  | 'conflict_resolved'
+  | 'relationship_linked';
+
+export type NotificationRelatedType =
+  | 'conflict_incident'
+  | 'solo_conversation'
+  | 'relationship'
+  | 'message';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  related_type?: NotificationRelatedType;
+  related_id?: string;
+  action_url?: string;
+  action_label?: string;
+  read: boolean;
+  read_at?: string;
+  created_at: string;
+}
+
+// ============================================================================
+// Conflict Types
+// ============================================================================
+
 export type ConflictIncidentStatus =
   | 'awaiting_partner_intake'
   | 'safety_evaluation'

@@ -154,6 +154,29 @@ export async function POST(
       .update({ status: newStatus })
       .eq('id', incidentId);
 
+    // Notify both partners that evaluation is ready
+    await supabase.rpc('create_notification', {
+      p_user_id: relationship.partner_a_id,
+      p_type: 'evaluation_ready',
+      p_title: 'Your recommendation is ready',
+      p_message: 'Eros has analyzed both perspectives and created a personalized recommendation for your next step.',
+      p_related_type: 'conflict_incident',
+      p_related_id: incidentId,
+      p_action_url: `/mediation/recommendation/${incidentId}`,
+      p_action_label: 'View Recommendation'
+    });
+
+    await supabase.rpc('create_notification', {
+      p_user_id: relationship.partner_b_id,
+      p_type: 'evaluation_ready',
+      p_title: 'Your recommendation is ready',
+      p_message: 'Eros has analyzed both perspectives and created a personalized recommendation for your next step.',
+      p_related_type: 'conflict_incident',
+      p_related_id: incidentId,
+      p_action_url: `/mediation/recommendation/${incidentId}`,
+      p_action_label: 'View Recommendation'
+    });
+
     const response: GetEvaluationResponse = {
       evaluation: savedEvaluation as ConflictSafetyEvaluation
     };
