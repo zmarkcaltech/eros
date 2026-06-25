@@ -6,40 +6,58 @@
 -- STEP 1: Create notifications table
 -- ============================================================================
 
+-- Create table if not exists
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-
-  -- Notification type and content
-  type TEXT NOT NULL CHECK (type IN (
-    'mediation_initiated',           -- Partner started mediation
-    'partner_intake_complete',       -- Partner completed intake, waiting for you
-    'both_intakes_complete',         -- Both done, evaluation running
-    'evaluation_ready',              -- Recommendation is ready
-    'partner_ready_for_next_step',   -- Partner clicked "ready" in solo conversation
-    'new_message',                   -- New message in shared chat
-    'conflict_resolved',             -- Conflict marked as resolved
-    'relationship_linked'            -- Partner accepted relationship link
-  )),
-
+  type TEXT NOT NULL,
   title TEXT NOT NULL,
   message TEXT NOT NULL,
-
-  -- Related entity
-  related_type TEXT CHECK (related_type IN ('conflict_incident', 'solo_conversation', 'relationship', 'message')),
-  related_id UUID,
-
-  -- Action link
-  action_url TEXT,                   -- Where to go when clicked
-  action_label TEXT,                 -- Button text (e.g., "Complete Intake", "View Recommendation")
-
-  -- Status
   read BOOLEAN DEFAULT false,
-  read_at TIMESTAMPTZ,
-
-  -- Metadata
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Add columns if they don't exist (for existing tables from partial migrations)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='notifications' AND column_name='related_type') THEN
+    ALTER TABLE notifications ADD COLUMN related_type TEXT CHECK (related_type IN ('conflict_incident', 'solo_conversation', 'relationship', 'message'));
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='notifications' AND column_name='related_id') THEN
+    ALTER TABLE notifications ADD COLUMN related_id UUID;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='notifications' AND column_name='action_url') THEN
+    ALTER TABLE notifications ADD COLUMN action_url TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='notifications' AND column_name='action_label') THEN
+    ALTER TABLE notifications ADD COLUMN action_label TEXT;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='notifications' AND column_name='read_at') THEN
+    ALTER TABLE notifications ADD COLUMN read_at TIMESTAMPTZ;
+  END IF;
+END $$;
+
+-- Add/update constraint on type column
+DO $$
+BEGIN
+  ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+  ALTER TABLE notifications ADD CONSTRAINT notifications_type_check CHECK (type IN (
+    'mediation_initiated',
+    'partner_intake_complete',
+    'both_intakes_complete',
+    'evaluation_ready',
+    'partner_ready_for_next_step',
+    'new_message',
+    'conflict_resolved',
+    'relationship_linked'
+  ));
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, read, created_at DESC);
