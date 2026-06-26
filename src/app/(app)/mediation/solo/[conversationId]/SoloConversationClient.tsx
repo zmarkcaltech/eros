@@ -10,13 +10,15 @@ interface Props {
   incidentId: string | null;
   initialMessages: SoloConversationMessage[];
   userName: string;
+  intakeData: any;
 }
 
 export default function SoloConversationClient({
   conversationId,
   incidentId,
   initialMessages,
-  userName
+  userName,
+  intakeData
 }: Props) {
   const router = useRouter();
   const [messages, setMessages] = useState<SoloConversationMessage[]>(initialMessages);
@@ -122,7 +124,7 @@ export default function SoloConversationClient({
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold text-gray-900">
@@ -144,9 +146,11 @@ export default function SoloConversationClient({
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+      {/* Main Content: Conversation + Intake Sidebar */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Messages Section (Left) */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -197,39 +201,187 @@ export default function SoloConversationClient({
             </div>
           )}
           <div ref={messagesEndRef} />
-        </div>
-      </div>
+          </div>
 
-      {/* Emotional Check-in (after 5 exchanges) */}
-      {showCheckIn && (
-        <div className="max-w-4xl mx-auto px-4 pb-4">
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p className="text-sm font-medium text-purple-900 mb-2">
-              💭 Quick check-in: How are you feeling now compared to when we started?
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowCheckIn(false)}
-                className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
-              >
-                Better - more grounded
-              </button>
-              <button
-                onClick={() => setShowCheckIn(false)}
-                className="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors"
-              >
-                About the same
-              </button>
-              <button
-                onClick={() => setShowCheckIn(false)}
-                className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
-              >
-                Still very upset
-              </button>
+          {/* Emotional Check-in (after 5 exchanges) */}
+          {showCheckIn && (
+            <div className="max-w-4xl mx-auto px-4 pb-4">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-purple-900 mb-2">
+                  💭 Quick check-in: How are you feeling now compared to when we started?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCheckIn(false)}
+                    className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors"
+                  >
+                    Better - more grounded
+                  </button>
+                  <button
+                    onClick={() => setShowCheckIn(false)}
+                    className="text-xs px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors"
+                  >
+                    About the same
+                  </button>
+                  <button
+                    onClick={() => setShowCheckIn(false)}
+                    className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
+                  >
+                    Still very upset
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Intake Summary Sidebar (Right) */}
+        {intakeData && (
+          <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto">
+            <div className="p-6 space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  📋 Your Intake Summary
+                </h2>
+                <p className="text-xs text-gray-600 mb-4">
+                  Reference this as you prepare for your conversation with your partner.
+                </p>
+              </div>
+
+              {/* Emotional State */}
+              {intakeData.current_emotional_state && intakeData.current_emotional_state.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-gray-700">Your Emotions</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {intakeData.current_emotional_state.map((emotion: string) => (
+                      <span
+                        key={emotion}
+                        className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-xs rounded-full"
+                      >
+                        {emotion}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Intensity & Metrics */}
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 mb-1">Intensity</h3>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-pink-500 to-purple-500 h-2 rounded-full"
+                        style={{ width: `${(intakeData.intensity_rating / 10) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {intakeData.intensity_rating}/10
+                    </span>
+                  </div>
+                </div>
+
+                {intakeData.how_triggered && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">How Triggered</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-orange-400 to-red-500 h-2 rounded-full"
+                          style={{ width: `${(intakeData.how_triggered / 10) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {intakeData.how_triggered}/10
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {intakeData.urgency_to_resolve && (
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-1">Urgency to Resolve</h3>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-400 to-blue-600 h-2 rounded-full"
+                          style={{ width: `${(intakeData.urgency_to_resolve / 10) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {intakeData.urgency_to_resolve}/10
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* What You Need */}
+              {intakeData.what_you_need_right_now && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-gray-700">What You Need</h3>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-800">{intakeData.what_you_need_right_now}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* What Happened */}
+              {intakeData.what_happened && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-gray-700">What Happened</h3>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-sm text-gray-800">{intakeData.what_happened}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Frequency */}
+              {intakeData.if_yes_how_often && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-gray-700">Conflict Frequency</h3>
+                  <p className="text-sm text-gray-600 capitalize">
+                    {intakeData.if_yes_how_often.replace(/_/g, ' ')}
+                  </p>
+                </div>
+              )}
+
+              {/* Safety Concerns */}
+              {(intakeData.physical_safety_concern || intakeData.emotional_safety_concern) && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-gray-700">Safety Concerns</h3>
+                  <div className="space-y-1 text-sm">
+                    {intakeData.physical_safety_concern && (
+                      <p className="text-red-600">⚠️ Physical safety concern noted</p>
+                    )}
+                    {intakeData.emotional_safety_concern && (
+                      <p className="text-orange-600">⚠️ Emotional safety concern noted</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Preferred Next Step */}
+              {intakeData.preferred_next_step && intakeData.preferred_next_step.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium text-gray-700">You Preferred</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {intakeData.preferred_next_step.map((step: string) => (
+                      <span
+                        key={step}
+                        className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full"
+                      >
+                        {step.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Input */}
       <div className="bg-white border-t border-gray-200 shadow-lg">
