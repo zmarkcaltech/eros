@@ -32,6 +32,13 @@ export default async function SoloConversationPage({
     redirect('/dashboard');
   }
 
+  // Get the conflict incident with relationship info
+  const { data: incident } = await supabase
+    .from('conflict_incidents')
+    .select('*, relationships!inner(*)')
+    .eq('id', (conversation as any).incident_id)
+    .single();
+
   // Get intake data for this incident
   const { data: intakeData } = await supabase
     .from('conflict_intake_responses')
@@ -84,6 +91,8 @@ Before we start drafting, tell me: How are you feeling right now, and what's the
         initialMessages={newMessage ? [newMessage] : []}
         userName={userName}
         intakeData={intakeData}
+        incident={incident}
+        userId={user.id}
       />
     );
   }
@@ -98,6 +107,8 @@ Before we start drafting, tell me: How are you feeling right now, and what's the
       initialMessages={messages || []}
       userName={userName}
       intakeData={intakeData}
+      incident={incident}
+      userId={user.id}
     />
   );
 }

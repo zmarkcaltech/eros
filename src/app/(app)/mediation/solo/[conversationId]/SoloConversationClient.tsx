@@ -69,6 +69,8 @@ interface Props {
   initialMessages: SoloConversationMessage[];
   userName: string;
   intakeData: any;
+  incident: any;
+  userId: string;
 }
 
 export default function SoloConversationClient({
@@ -76,15 +78,69 @@ export default function SoloConversationClient({
   incidentId,
   initialMessages,
   userName,
-  intakeData
+  intakeData,
+  incident: initialIncident,
+  userId
 }: Props) {
   const router = useRouter();
   const [messages, setMessages] = useState<SoloConversationMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
+  const [incident, setIncident] = useState(initialIncident);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+
+  // Determine conflict status for display
+  const getStatusInfo = () => {
+    if (!incident) return { text: 'Loading...', color: 'gray' };
+
+    const relationship = incident.relationships;
+    const userIsPartnerA = relationship.partner_a_id === userId;
+    const partnerIntakeCompleted = userIsPartnerA
+      ? incident.partner_b_intake_completed_at
+      : incident.partner_a_intake_completed_at;
+
+    if (!partnerIntakeCompleted) {
+      return {
+        text: 'Awaiting partner response',
+        color: 'yellow',
+        nextStep: null
+      };
+    }
+
+    if (incident.status === 'safety_evaluation') {
+      return {
+        text: 'Both intakes complete - Eros is evaluating',
+        color: 'blue',
+        nextStep: { url: `/mediation/recommendation/${incidentId}`, label: 'View Recommendation' }
+      };
+    }
+
+    if (incident.status === 'solo_conversations') {
+      return {
+        text: 'Both partners preparing messages',
+        color: 'purple',
+        nextStep: { url: `/mediation/recommendation/${incidentId}`, label: 'View Recommendation' }
+      };
+    }
+
+    if (incident.status === 'joint_mediation_ready') {
+      return {
+        text: 'Ready for joint conversation',
+        color: 'green',
+        nextStep: { url: `/mediation/conversation/${incidentId}`, label: 'Start Joint Conversation' }
+      };
+    }
+
+    return {
+      text: incident.status.replace(/_/g, ' '),
+      color: 'gray',
+      nextStep: null
+    };
+  };
+
+  const statusInfo = getStatusInfo();
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -124,6 +180,40 @@ export default function SoloConversationClient({
       supabase.removeChannel(channel);
     };
   }, [conversationId]);
+
+  // Subscribe to conflict incident changes
+  useEffect(() => {
+    if (!incidentId) return;
+
+    const channel = supabase
+      .channel(`conflict_incident:${incidentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conflict_incidents',
+          filter: `id=eq.${incidentId}`
+        },
+        async (payload) => {
+          // Re-fetch with relationships
+          const { data: updatedIncident } = await supabase
+            .from('conflict_incidents')
+            .select('*, relationships!inner(*)')
+            .eq('id', incidentId)
+            .single();
+
+          if (updatedIncident) {
+            setIncident(updatedIncident);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [incidentId]);
 
   // Show emotional check-in after 5 messages
   useEffect(() => {
@@ -184,20 +274,49 @@ export default function SoloConversationClient({
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Private Conversation with Eros
-              </h1>
-              <p className="text-sm text-gray-600">
-                This is private - your partner cannot see this conversation
-              </p>
-            </div>
-            {incidentId && messages.length >= 6 && (
+            <div className="flex items-center gap-4">
               <button
-                onClick={handleReadyForNextStep}
+                onClick={() => router.push('/dashboard')}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Back to Dashboard"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-xl font-semibold text-gray-900">
+                    Private Conversation with Eros
+                  </h1>
+                  {incident?.conflict_name && (
+                    <span className="text-sm text-gray-500">• {incident.conflict_name}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mt-1">
+                  <p className="text-sm text-gray-600">
+                    This is private - your partner cannot see this conversation
+                  </p>
+                  {statusInfo && (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      statusInfo.color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                      statusInfo.color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                      statusInfo.color === 'purple' ? 'bg-purple-100 text-purple-800' :
+                      statusInfo.color === 'green' ? 'bg-green-100 text-green-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {statusInfo.text}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            {statusInfo?.nextStep && (
+              <button
+                onClick={() => router.push(statusInfo.nextStep!.url)}
                 className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg text-sm"
               >
-                I'm ready for next step →
+                {statusInfo.nextStep.label} →
               </button>
             )}
           </div>
