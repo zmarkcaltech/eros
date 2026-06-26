@@ -52,17 +52,18 @@ export default async function SoloConversationPage({
     const profile = (conversation as any).profiles;
     const userName = profile.preferred_name || profile.full_name || 'there';
 
-    const openingMessage = `Hi ${userName}, I'm here to help you process what happened and prepare for a productive conversation with your partner.
+    const openingMessage = `Hi ${userName}, I'm here to help you craft the perfect message to send to your partner.
 
-I've carefully reviewed your intake form. I can see you're feeling ${intakeData?.current_emotional_state?.join(', ') || 'strongly about this situation'}, and that this matters to you (intensity: ${intakeData?.intensity_rating}/10).
+I've reviewed your intake form. You're feeling ${intakeData?.current_emotional_state?.join(', ') || 'strongly about this'} (intensity: ${intakeData?.intensity_rating}/10), and I can see this really matters to you.
 
-This is your private space - your partner cannot see this conversation. Let's work together to:
-1. Process your emotions and calm down if needed
-2. Identify what you truly need from your partner
-3. Practice how to communicate those needs effectively
-4. Understand what your partner might be feeling too
+**My goal:** Help you compose specific text messages or conversation scripts that will help your partner actually HEAR you, without triggering defensiveness.
 
-Before we dive in, how are you feeling right now in this moment?`;
+This is private - your partner won't see this conversation. We'll work together to:
+1. Figure out what you truly need to communicate
+2. Draft actual messages you can copy and send
+3. Refine them until they feel authentic to you
+
+Before we start drafting, tell me: How are you feeling right now, and what's the main thing you need your partner to understand?`;
 
     const { data: newMessage } = await supabase
       .from('solo_conversation_messages')

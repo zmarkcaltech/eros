@@ -5,6 +5,64 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { SoloConversationMessage } from '@/types/mediation';
 
+// Component to render message with copy buttons for drafts
+function MessageContent({ content }: { content: string }) {
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  // Check if message contains message drafts (📱 pattern)
+  const hasMessageDrafts = content.includes('📱');
+
+  const handleCopy = (text: string, index: number) => {
+    // Remove the emoji and label, keep just the message text
+    const cleanText = text
+      .replace(/📱\s*Option\s*\d+[:\s]*(\([^)]+\))?:?\s*/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+
+    navigator.clipboard.writeText(cleanText);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  if (!hasMessageDrafts) {
+    return <p className="whitespace-pre-wrap">{content}</p>;
+  }
+
+  // Split content by message draft markers
+  const parts = content.split(/(📱[^\n]+\n[^\n📱]+)/g);
+
+  return (
+    <div className="space-y-3">
+      {parts.map((part, index) => {
+        if (part.trim().startsWith('📱')) {
+          // This is a message draft - add copy button
+          const lines = part.trim().split('\n');
+          const header = lines[0];
+          const message = lines.slice(1).join('\n').trim();
+
+          return (
+            <div key={index} className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-3 relative group">
+              <div className="text-xs font-semibold text-purple-900 mb-2">{header}</div>
+              <div className="text-sm text-gray-800 mb-2 font-medium">{message}</div>
+              <button
+                onClick={() => handleCopy(message, index)}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-purple-600 text-white text-xs px-3 py-1 rounded-full hover:bg-purple-700 flex items-center gap-1"
+              >
+                {copiedIndex === index ? (
+                  <>✓ Copied!</>
+                ) : (
+                  <>📋 Copy</>
+                )}
+              </button>
+            </div>
+          );
+        }
+        return part.trim() ? <p key={index} className="whitespace-pre-wrap">{part}</p> : null;
+      })}
+    </div>
+  );
+}
+
 interface Props {
   conversationId: string;
   incidentId: string | null;
@@ -171,7 +229,11 @@ export default function SoloConversationClient({
                     <span className="text-xs font-medium text-gray-600">Eros</span>
                   </div>
                 )}
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                {message.sender_type === 'ai' ? (
+                  <MessageContent content={message.content} />
+                ) : (
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                )}
                 <div className={`text-xs mt-2 ${
                   message.sender_type === 'user' ? 'text-pink-100' : 'text-gray-500'
                 }`}>
