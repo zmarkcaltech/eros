@@ -441,7 +441,7 @@ export default async function DashboardPage() {
                       statusBadge = 'Waiting for partner'
                       statusColor = 'bg-yellow-100 text-yellow-800'
                       if (soloConvId) {
-                        nextAction = 'Continue Solo Conversation'
+                        nextAction = 'Craft Message to Partner'
                         actionUrl = `/mediation/solo/${soloConvId}`
                       }
                     }
@@ -449,10 +449,10 @@ export default async function DashboardPage() {
                     statusBadge = 'Eros is evaluating'
                     statusColor = 'bg-blue-100 text-blue-800'
                   } else if (conflict.status === 'solo_conversations') {
-                    statusBadge = 'Continue processing'
+                    statusBadge = 'Craft your message'
                     statusColor = 'bg-purple-100 text-purple-800'
                     if (soloConvId) {
-                      nextAction = 'Continue Solo Work'
+                      nextAction = 'Continue Message Crafting'
                       actionUrl = `/mediation/solo/${soloConvId}`
                     }
                   } else if (conflict.status === 'joint_mediation_ready') {
@@ -468,7 +468,7 @@ export default async function DashboardPage() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <h3 className="font-semibold text-gray-900">
-                              {conflict.topic || 'Conflict Mediation'}
+                              {conflict.conflict_name || conflict.topic || 'Ongoing Mediation'}
                             </h3>
                             <span className={`text-xs px-2 py-1 rounded-full ${statusColor}`}>
                               {statusBadge}
@@ -476,6 +476,7 @@ export default async function DashboardPage() {
                           </div>
                           <p className="text-sm text-gray-600 mb-3">
                             Started {new Date(conflict.created_at).toLocaleDateString()}
+                            {conflict.conflict_name && <span className="ml-2 text-purple-600">• AI-named</span>}
                           </p>
                           {nextAction && actionUrl && (
                             <Link
@@ -511,40 +512,55 @@ export default async function DashboardPage() {
           {/* Mediation Support */}
           {isActive && (
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Conflict Support</h2>
+              <h2 className="text-xl font-semibold mb-4">AI-Guided Conflict Mediation</h2>
               <div className="border-2 border-pink-200 rounded-lg p-6 bg-gradient-to-br from-pink-50 to-purple-50">
                 <div className="flex items-start gap-4">
                   <div className="text-5xl">💬</div>
                   <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-2">Need help with a conflict?</h3>
+                    <h3 className="text-xl font-semibold mb-2">Need help navigating a conflict?</h3>
                     <p className="text-gray-700 mb-4">
-                      I'll guide both of you through a structured mediation process. First, you'll each share your perspective privately,
-                      then I'll help determine the best next step based on what you both need right now.
+                      I'll guide you through a thoughtful mediation process designed by relationship experts. Here's how it works:
                     </p>
-                    <div className="space-y-2 text-sm text-gray-600 mb-6">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="space-y-3 text-sm text-gray-700 mb-6">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        <span>Private conversations with each partner</span>
+                        <div>
+                          <strong className="text-gray-900">Private intake forms:</strong> Each of you shares your perspective separately. I'll create a neutral, de-escalatory summary so your partner knows which situation you're addressing—without the raw emotion.
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        <span>Personalized safety evaluation</span>
+                        <div>
+                          <strong className="text-gray-900">Message crafting coach:</strong> I'll help you draft specific, copyable messages to send your partner. Think of it like having a couples therapist help you find the right words.
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        <span>Recommendations tailored to your situation</span>
+                        <div>
+                          <strong className="text-gray-900">Safety evaluation:</strong> Using both perspectives, I assess whether you need a break, more solo processing, professional support, or if you're ready to talk together.
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
-                        <span>You decide what happens next</span>
+                        <div>
+                          <strong className="text-gray-900">Privacy protection:</strong> Safety concerns, thoughts about the relationship, and other sensitive details stay completely private.
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        <div>
+                          <strong className="text-gray-900">Real-time notifications:</strong> Get notified when your partner completes their intake or when recommendations are ready.
+                        </div>
                       </div>
                     </div>
                     <form action={async () => {
