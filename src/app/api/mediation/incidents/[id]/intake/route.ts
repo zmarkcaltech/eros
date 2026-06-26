@@ -1,10 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
 import type {
   SubmitIntakeRequest,
   SubmitIntakeResponse,
   ConflictIntakeResponse
 } from '@/types/mediation';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY!
+});
 
 export async function POST(
   request: NextRequest,
@@ -110,15 +115,51 @@ export async function POST(
       );
     }
 
-    // Update incident with completion timestamp
-    const updateField = responderRole === 'partner_a'
-      ? 'partner_a_intake_completed_at'
-      : 'partner_b_intake_completed_at';
+    // Generate AI summary for the other partner (if this is first intake)
+    const { data: existingIntakes } = await supabase
+      .from('conflict_intake_responses')
+      .select('id')
+      .eq('incident_id', incidentId);
 
-    await supabase
-      .from('conflict_incidents')
-      .update({ [updateField]: new Date().toISOString() })
-      .eq('id', incidentId);
+    const isFirstIntake = !existingIntakes || existingIntakes.length === 1; // Only this person's intake exists
+
+    if (isFirstIntake) {
+      // Generate de-escalatory summary and conflict name
+      const { summary, conflictName } = await generateDeEscalatorySummary({
+        what_happened: body.what_happened,
+        intensity_rating: body.intensity_rating,
+        current_emotional_state: body.current_emotional_state,
+        has_happened_before: body.has_happened_before,
+        if_yes_how_often: body.if_yes_how_often,
+        what_you_need_right_now: body.what_you_need_right_now,
+        responderRole
+      });
+
+      // Update incident with summary and conflict name
+      const summaryField = responderRole === 'partner_a'
+        ? 'partner_a_summary_for_partner_b'
+        : 'partner_b_summary_for_partner_a';
+
+      await supabase
+        .from('conflict_incidents')
+        .update({
+          [summaryField]: summary,
+          conflict_name: conflictName,
+          partner_a_intake_completed_at: responderRole === 'partner_a' ? new Date().toISOString() : undefined,
+          partner_b_intake_completed_at: responderRole === 'partner_b' ? new Date().toISOString() : undefined
+        })
+        .eq('id', incidentId);
+    } else {
+      // Second partner - just update timestamp
+      const updateField = responderRole === 'partner_a'
+        ? 'partner_a_intake_completed_at'
+        : 'partner_b_intake_completed_at';
+
+      await supabase
+        .from('conflict_incidents')
+        .update({ [updateField]: new Date().toISOString() })
+        .eq('id', incidentId);
+    }
 
     // Create solo conversation for this user
     const { data: soloConversation, error: soloError } = await supabase
@@ -208,4 +249,101 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+async function generateDeEscalatorySummary({
+  what_happened,
+  intensity_rating,
+  current_emotional_state,
+  has_happened_before,
+  if_yes_how_often,
+  what_you_need_right_now,
+  responderRole
+}: {
+  what_happened: string;
+  intensity_rating: number;
+  current_emotional_state: string[];
+  has_happened_before: boolean;
+  if_yes_how_often?: string;
+  what_you_need_right_now?: string;
+  responderRole: string;
+}): Promise<{ summary: string; conflictName: string }> {
+  const prompt = `You are Eros, an AI couples mediator trained in de-escalation and Emotionally Focused Therapy (EFT).
+
+One partner has just shared their perspective on a conflict. Your job is to:
+1. Create a NEUTRAL, DE-ESCALATORY SUMMARY of what happened (for the other partner to read)
+2. Generate a SHORT CONFLICT NAME that's neutral and non-blaming
+
+PARTNER'S RAW PERSPECTIVE:
+"${what_happened}"
+
+EMOTIONAL STATE: ${current_emotional_state.join(', ')}
+INTENSITY: ${intensity_rating}/10
+FREQUENCY: ${has_happened_before ? (if_yes_how_often || 'has happened before') : 'first time'}
+WHAT THEY NEED: ${what_you_need_right_now || 'not specified'}
+
+YOUR TASK:
+
+1. **DE-ESCALATORY SUMMARY** (for the other partner):
+   - Strip out blame, accusations, and inflammatory language
+   - Focus on OBSERVABLE BEHAVIORS and FACTS, not character judgments
+   - Remove absolute words like "always", "never", "you're so..."
+   - Don't assume accusations are true - present them as this partner's experience
+   - Keep it brief (2-4 sentences max)
+   - Make it specific enough for the other partner to know WHICH incident this is
+   - Use neutral, mediator language
+
+   BAD: "You always ignore me and never listen to what I say"
+   GOOD: "There was a situation where one partner felt unheard during a conversation"
+
+   BAD: "He's a selfish jerk who only thinks about himself"
+   GOOD: "One partner felt their needs weren't being considered in a recent decision"
+
+2. **CONFLICT NAME** (neutral, 5-8 words max):
+   - Should be descriptive but neutral
+   - NO blame or character attacks
+   - Examples: "Communication about household responsibilities", "Different perspectives on social plans", "Navigating differing needs for connection"
+
+DO NOT REVEAL IN THE SUMMARY:
+- Thoughts of ending the relationship
+- Safety concerns
+- Substance use
+- Anything deeply vulnerable that should stay private
+
+OUTPUT FORMAT (JSON):
+{
+  "summary": "2-4 sentence de-escalatory summary here",
+  "conflictName": "Short neutral name for the conflict"
+}
+
+Be compassionate but NEUTRAL. Your goal is to help the other partner understand what happened WITHOUT making them defensive.`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-opus-4-20250514',
+    max_tokens: 512,
+    messages: [{
+      role: 'user',
+      content: prompt
+    }]
+  });
+
+  const content = response.content[0].type === 'text'
+    ? response.content[0].text
+    : '';
+
+  // Parse JSON response
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    // Fallback if AI doesn't return proper JSON
+    return {
+      summary: "One partner shared their perspective on a situation that arose between you both.",
+      conflictName: "Recent situation"
+    };
+  }
+
+  const parsed = JSON.parse(jsonMatch[0]);
+  return {
+    summary: parsed.summary || "One partner shared their perspective on a situation that arose between you both.",
+    conflictName: parsed.conflictName || "Recent situation"
+  };
 }

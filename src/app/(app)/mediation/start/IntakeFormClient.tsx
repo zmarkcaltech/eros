@@ -12,8 +12,9 @@ import type {
 interface Props {
   incidentId: string;
   relationshipId: string;
+  partnerSummary?: string; // AI-generated de-escalatory summary
+  conflictName?: string; // AI-generated conflict name
   partnerIntake?: {
-    what_happened: string;
     intensity_rating: number;
     current_emotional_state: string[];
     has_happened_before: boolean;
@@ -25,7 +26,7 @@ interface Props {
   partnerName: string;
 }
 
-export default function IntakeFormClient({ incidentId, relationshipId, partnerIntake, partnerName }: Props) {
+export default function IntakeFormClient({ incidentId, relationshipId, partnerSummary, conflictName, partnerIntake, partnerName }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -95,33 +96,56 @@ export default function IntakeFormClient({ incidentId, relationshipId, partnerIn
       case 1:
         return (
           <div className="space-y-4">
+            {/* Privacy Notice - Only show for first partner */}
+            {!partnerSummary && (
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                <h3 className="text-sm font-semibold text-yellow-900 mb-2">📋 Privacy Notice</h3>
+                <p className="text-xs text-yellow-800 mb-2">
+                  Your responses will help me understand your perspective and guide both of you through this conflict. Here's what happens with your information:
+                </p>
+                <ul className="text-xs text-yellow-800 space-y-1 ml-4">
+                  <li>✅ <strong>Shared with your partner (in summary form):</strong> I'll create a neutral, de-escalatory summary of what happened so your partner knows which situation you're referring to. They'll also see your intensity level, emotions, and needs.</li>
+                  <li>🔒 <strong>Kept private:</strong> Safety concerns, thoughts about ending the relationship, and substance involvement stay completely private.</li>
+                  <li>🤖 <strong>Used by me:</strong> I'll use all your responses to provide personalized support and recommendations.</li>
+                </ul>
+              </div>
+            )}
+
             <h2 className="text-2xl font-semibold text-gray-900">
-              {partnerIntake ? `What's your take on what happened?` : `Tell me what happened`}
+              {partnerSummary ? `What's your take on what happened?` : `Tell me what happened`}
             </h2>
-            {partnerIntake ? (
+            {conflictName && (
+              <div className="inline-block px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium mb-2">
+                📌 {conflictName}
+              </div>
+            )}
+            {partnerSummary ? (
               <>
                 <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
                   <p className="text-sm text-blue-900 mb-2">
                     <strong>Context from {partnerName}:</strong>
                   </p>
-                  <p className="text-sm text-blue-800 italic">
-                    "{partnerIntake.what_happened}"
+                  <p className="text-sm text-blue-800">
+                    {partnerSummary}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-2 italic">
+                    (This is my de-escalatory summary of their perspective, not their exact words)
                   </p>
                 </div>
                 <p className="text-gray-600">
-                  {partnerName} shared their perspective above. Now I'd like to hear yours. What was your experience of this situation? Take your time - this is private, just between you and me.
+                  {partnerName} shared their perspective above. Now I'd like to hear yours. What was your experience of this situation?
                 </p>
               </>
             ) : (
               <p className="text-gray-600">
-                Take your time - this is private, just between you and me.
+                Take your time and describe what happened from your perspective.
               </p>
             )}
             <textarea
               value={formData.what_happened}
               onChange={(e) => setFormData({ ...formData, what_happened: e.target.value })}
               className="w-full h-40 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-              placeholder={partnerIntake ? "What was your experience of this situation?" : "Describe what happened from your perspective..."}
+              placeholder={partnerSummary ? "What was your experience of this situation?" : "Describe what happened from your perspective..."}
               required
             />
           </div>
