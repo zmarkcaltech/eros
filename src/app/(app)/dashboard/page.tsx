@@ -363,17 +363,19 @@ export default async function DashboardPage() {
           </div>
 
           {/* Notifications */}
-          {notifications && notifications.filter((n: any) => n.title && n.message).length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <span className="relative">
-                  🔔
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <span className="relative">
+                🔔
+                {notifications && notifications.filter((n: any) => n.title && n.message).length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {notifications.filter((n: any) => n.title && n.message).length}
                   </span>
-                </span>
-                Notifications
-              </h2>
+                )}
+              </span>
+              Notifications
+            </h2>
+            {notifications && notifications.filter((n: any) => n.title && n.message).length > 0 ? (
               <div className="space-y-3">
                 {notifications.filter((n: any) => n.title && n.message).map((notification: any) => (
                   <div key={notification.id} className="border border-purple-200 rounded-lg p-4 bg-purple-50 hover:bg-purple-100 transition-colors">
@@ -397,8 +399,13 @@ export default async function DashboardPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p className="text-sm">No new notifications</p>
+                <p className="text-xs mt-1">You'll be notified when your partner takes action</p>
+              </div>
+            )}
+          </div>
 
           {/* Active Conflicts */}
           {activeConflicts && activeConflicts.length > 0 && (
