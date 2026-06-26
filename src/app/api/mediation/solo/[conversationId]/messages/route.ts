@@ -124,6 +124,7 @@ export async function POST(
     });
 
     // Call Claude Opus 4
+    console.log('Calling Claude API with conversation history length:', conversationHistory.length);
     const aiResponse = await anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1024,
@@ -134,6 +135,8 @@ export async function POST(
     const aiContent = aiResponse.content[0].type === 'text'
       ? aiResponse.content[0].text
       : '';
+
+    console.log('AI response received, length:', aiContent.length);
 
     // Save AI response
     const { data: aiMessage, error: aiMsgError } = await supabase
@@ -155,6 +158,8 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    console.log('AI message saved successfully');
 
     // Update last_message_at
     await supabase
