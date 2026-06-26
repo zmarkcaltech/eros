@@ -185,6 +185,7 @@ export async function POST(
     }
 
     // Create solo conversation for this user
+    console.log('Creating solo conversation for user:', user.id, 'incident:', incidentId);
     const { data: soloConversation, error: soloError } = await supabase
       .from('solo_conversations')
       .insert({
@@ -204,6 +205,8 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    console.log('Solo conversation created successfully:', soloConversation.id);
 
     // Check if both partners have completed intake
     const { data: bothIntakes } = await supabase
@@ -246,7 +249,8 @@ export async function POST(
       });
     } else {
       // Only one partner completed - notify the other partner
-      await supabase.rpc('create_notification', {
+      console.log('Creating notification for partner:', partnerId);
+      const { error: notifError } = await supabase.rpc('create_notification', {
         p_user_id: partnerId,
         p_type: 'partner_intake_complete',
         p_title: 'Your partner completed their intake',
@@ -256,6 +260,12 @@ export async function POST(
         p_action_url: `/mediation/start?incident=${incidentId}`,
         p_action_label: 'Complete Your Intake'
       });
+
+      if (notifError) {
+        console.error('Error creating notification:', notifError);
+      } else {
+        console.log('Notification created successfully for partner');
+      }
     }
 
     const response: SubmitIntakeResponse = {

@@ -72,7 +72,8 @@ This is private - your partner won't see this conversation. We'll work together 
 
 Before we start drafting, tell me: How are you feeling right now, and what's the main thing you need your partner to understand?`;
 
-    const { data: newMessage } = await supabase
+    console.log('Creating opening message for conversation:', conversationId);
+    const { data: newMessage, error: msgError } = await supabase
       .from('solo_conversation_messages')
       .insert({
         conversation_id: conversationId,
@@ -83,6 +84,12 @@ Before we start drafting, tell me: How are you feeling right now, and what's the
       })
       .select()
       .single();
+
+    if (msgError) {
+      console.error('Error creating opening message:', msgError);
+    } else {
+      console.log('Opening message created successfully');
+    }
 
     return (
       <SoloConversationClient
