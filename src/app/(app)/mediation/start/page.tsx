@@ -60,10 +60,33 @@ export default async function MediationStartPage({
     }
   }
 
+  // Check if partner has already submitted intake
+  const partnerId = relationship.partner_a_id === user.id
+    ? relationship.partner_b_id
+    : relationship.partner_a_id;
+
+  const { data: partnerIntake } = await supabase
+    .from('conflict_intake_responses')
+    .select('what_happened, intensity_rating, current_emotional_state, has_happened_before, if_yes_how_often, what_you_need_right_now, urgency_to_resolve, how_triggered')
+    .eq('incident_id', incidentId)
+    .eq('responder_id', partnerId)
+    .single();
+
+  // Get partner's name
+  const { data: partnerProfile } = await supabase
+    .from('profiles')
+    .select('preferred_name, full_name')
+    .eq('id', partnerId)
+    .single();
+
+  const partnerName = partnerProfile?.preferred_name || partnerProfile?.full_name || 'your partner';
+
   return (
     <IntakeFormClient
       incidentId={incidentId}
       relationshipId={relationship.id}
+      partnerIntake={partnerIntake || undefined}
+      partnerName={partnerName}
     />
   );
 }

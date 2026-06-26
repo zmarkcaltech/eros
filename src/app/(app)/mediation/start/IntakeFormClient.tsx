@@ -12,9 +12,20 @@ import type {
 interface Props {
   incidentId: string;
   relationshipId: string;
+  partnerIntake?: {
+    what_happened: string;
+    intensity_rating: number;
+    current_emotional_state: string[];
+    has_happened_before: boolean;
+    if_yes_how_often?: string;
+    what_you_need_right_now?: string;
+    urgency_to_resolve: number;
+    how_triggered: number;
+  };
+  partnerName: string;
 }
 
-export default function IntakeFormClient({ incidentId, relationshipId }: Props) {
+export default function IntakeFormClient({ incidentId, relationshipId, partnerIntake, partnerName }: Props) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -85,16 +96,32 @@ export default function IntakeFormClient({ incidentId, relationshipId }: Props) 
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Tell me what happened
+              {partnerIntake ? `What's your take on what happened?` : `Tell me what happened`}
             </h2>
-            <p className="text-gray-600">
-              Take your time - this is private, just between you and me.
-            </p>
+            {partnerIntake ? (
+              <>
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                  <p className="text-sm text-blue-900 mb-2">
+                    <strong>Context from {partnerName}:</strong>
+                  </p>
+                  <p className="text-sm text-blue-800 italic">
+                    "{partnerIntake.what_happened}"
+                  </p>
+                </div>
+                <p className="text-gray-600">
+                  {partnerName} shared their perspective above. Now I'd like to hear yours. What was your experience of this situation? Take your time - this is private, just between you and me.
+                </p>
+              </>
+            ) : (
+              <p className="text-gray-600">
+                Take your time - this is private, just between you and me.
+              </p>
+            )}
             <textarea
               value={formData.what_happened}
               onChange={(e) => setFormData({ ...formData, what_happened: e.target.value })}
               className="w-full h-40 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-              placeholder="Describe what happened from your perspective..."
+              placeholder={partnerIntake ? "What was your experience of this situation?" : "Describe what happened from your perspective..."}
               required
             />
           </div>
@@ -104,10 +131,17 @@ export default function IntakeFormClient({ incidentId, relationshipId }: Props) 
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">
-              How intense was this conflict?
+              How intense was this conflict for you?
             </h2>
+            {partnerIntake && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
+                <p className="text-sm text-purple-900">
+                  {partnerName} rated this as a <strong>{partnerIntake.intensity_rating}/10</strong> in intensity for them
+                </p>
+              </div>
+            )}
             <p className="text-gray-600">
-              On a scale of 1-10
+              On a scale of 1-10, how intense was it from your perspective?
             </p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-gray-500">
@@ -133,8 +167,15 @@ export default function IntakeFormClient({ incidentId, relationshipId }: Props) 
         return (
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900">
-              Has this happened before?
+              {partnerIntake ? `From your perspective, has this type of conflict happened before?` : `Has this happened before?`}
             </h2>
+            {partnerIntake && partnerIntake.has_happened_before && partnerIntake.if_yes_how_often && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
+                <p className="text-sm text-purple-900">
+                  {partnerName} mentioned this type of issue has come up before ({partnerIntake.if_yes_how_often.replace(/_/g, ' ')})
+                </p>
+              </div>
+            )}
             <div className="space-y-3">
               <button
                 onClick={() => setFormData({ ...formData, has_happened_before: false, if_yes_how_often: undefined })}
@@ -216,6 +257,16 @@ export default function IntakeFormClient({ incidentId, relationshipId }: Props) 
             <h2 className="text-2xl font-semibold text-gray-900">
               How are you feeling right now?
             </h2>
+            {partnerIntake && partnerIntake.current_emotional_state && partnerIntake.current_emotional_state.length > 0 && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
+                <p className="text-sm text-purple-900 mb-1">
+                  {partnerName} is feeling: <strong>{partnerIntake.current_emotional_state.join(', ')}</strong>
+                </p>
+                <p className="text-xs text-purple-700">
+                  Understanding each other's emotions helps you both reconnect
+                </p>
+              </div>
+            )}
             <p className="text-gray-600">Select all that apply</p>
             <div className="grid grid-cols-2 gap-3">
               {emotions.map((emotion) => {
@@ -535,6 +586,16 @@ export default function IntakeFormClient({ incidentId, relationshipId }: Props) 
             <h2 className="text-2xl font-semibold text-gray-900">
               What do you need right now?
             </h2>
+            {partnerIntake && partnerIntake.what_you_need_right_now && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-2">
+                <p className="text-sm text-purple-900 mb-1">
+                  {partnerName} shared they need: "{partnerIntake.what_you_need_right_now}"
+                </p>
+                <p className="text-xs text-purple-700">
+                  Knowing each other's needs helps you both move toward resolution
+                </p>
+              </div>
+            )}
             <p className="text-gray-600">
               For example: "I need them to listen", "I need space", "I need to feel heard"
             </p>
