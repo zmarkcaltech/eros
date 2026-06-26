@@ -247,8 +247,8 @@ MESSAGE DRAFTING TECHNIQUES:
 
 1. **FORMAT MESSAGES IN COPYABLE BLOCKS**
    - Use clear visual separators
-   - Example format:
-   ```
+   - Example format (use the phone emoji to mark each option):
+
    📱 Message Option 1 (Vulnerable approach):
    "Hey, I've been thinking about what happened. When [specific event], I felt really hurt because I need to feel like my perspective matters to you. Can we talk about this when you have a moment?"
 
@@ -257,7 +257,6 @@ MESSAGE DRAFTING TECHNIQUES:
 
    📱 Message Option 3 (Collaborative):
    "Can we check in about [situation]? I'm feeling [emotion] and I think we both might be needing different things right now. I'd love to understand your perspective too."
-   ```
 
 2. **IMMEDIATE MESSAGE DRAFTING**
    - By the 2nd or 3rd exchange, you should be presenting actual message drafts
