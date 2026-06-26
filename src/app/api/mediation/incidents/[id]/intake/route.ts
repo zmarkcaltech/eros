@@ -124,31 +124,54 @@ export async function POST(
     const isFirstIntake = !existingIntakes || existingIntakes.length === 1; // Only this person's intake exists
 
     if (isFirstIntake) {
-      // Generate de-escalatory summary and conflict name
-      const { summary, conflictName } = await generateDeEscalatorySummary({
-        what_happened: body.what_happened,
-        intensity_rating: body.intensity_rating,
-        current_emotional_state: body.current_emotional_state,
-        has_happened_before: body.has_happened_before,
-        if_yes_how_often: body.if_yes_how_often,
-        what_you_need_right_now: body.what_you_need_right_now,
-        responderRole
-      });
+      try {
+        // Generate de-escalatory summary and conflict name
+        const { summary, conflictName } = await generateDeEscalatorySummary({
+          what_happened: body.what_happened,
+          intensity_rating: body.intensity_rating,
+          current_emotional_state: body.current_emotional_state,
+          has_happened_before: body.has_happened_before,
+          if_yes_how_often: body.if_yes_how_often,
+          what_you_need_right_now: body.what_you_need_right_now,
+          responderRole
+        });
 
-      // Update incident with summary and conflict name
-      const summaryField = responderRole === 'partner_a'
-        ? 'partner_a_summary_for_partner_b'
-        : 'partner_b_summary_for_partner_a';
+        // Update incident with summary and conflict name
+        const summaryField = responderRole === 'partner_a'
+          ? 'partner_a_summary_for_partner_b'
+          : 'partner_b_summary_for_partner_a';
 
-      await supabase
-        .from('conflict_incidents')
-        .update({
+        const timestampField = responderRole === 'partner_a'
+          ? 'partner_a_intake_completed_at'
+          : 'partner_b_intake_completed_at';
+
+        const updateData: any = {
           [summaryField]: summary,
           conflict_name: conflictName,
-          partner_a_intake_completed_at: responderRole === 'partner_a' ? new Date().toISOString() : undefined,
-          partner_b_intake_completed_at: responderRole === 'partner_b' ? new Date().toISOString() : undefined
-        })
-        .eq('id', incidentId);
+          [timestampField]: new Date().toISOString()
+        };
+
+        const { error: updateError } = await supabase
+          .from('conflict_incidents')
+          .update(updateData)
+          .eq('id', incidentId);
+
+        if (updateError) {
+          console.error('Error updating incident with AI summary:', updateError);
+          throw updateError;
+        }
+      } catch (aiError) {
+        console.error('Error generating AI summary:', aiError);
+        // Continue without AI summary - don't block the intake submission
+        const timestampField = responderRole === 'partner_a'
+          ? 'partner_a_intake_completed_at'
+          : 'partner_b_intake_completed_at';
+
+        await supabase
+          .from('conflict_incidents')
+          .update({ [timestampField]: new Date().toISOString() })
+          .eq('id', incidentId);
+      }
     } else {
       // Second partner - just update timestamp
       const updateField = responderRole === 'partner_a'
@@ -318,32 +341,44 @@ OUTPUT FORMAT (JSON):
 
 Be compassionate but NEUTRAL. Your goal is to help the other partner understand what happened WITHOUT making them defensive.`;
 
-  const response = await anthropic.messages.create({
-    model: 'claude-opus-4-20250514',
-    max_tokens: 512,
-    messages: [{
-      role: 'user',
-      content: prompt
-    }]
-  });
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-4-20250514',
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    });
 
-  const content = response.content[0].type === 'text'
-    ? response.content[0].text
-    : '';
+    const content = response.content[0].type === 'text'
+      ? response.content[0].text
+      : '';
 
-  // Parse JSON response
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    // Fallback if AI doesn't return proper JSON
+    console.log('AI response for de-escalatory summary:', content);
+
+    // Parse JSON response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn('AI did not return valid JSON, using fallback');
+      // Fallback if AI doesn't return proper JSON
+      return {
+        summary: "One partner shared their perspective on a situation that arose between you both.",
+        conflictName: "Recent situation"
+      };
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    return {
+      summary: parsed.summary || "One partner shared their perspective on a situation that arose between you both.",
+      conflictName: parsed.conflictName || "Recent situation"
+    };
+  } catch (error) {
+    console.error('Error in generateDeEscalatorySummary:', error);
+    // Return fallback on any error
     return {
       summary: "One partner shared their perspective on a situation that arose between you both.",
       conflictName: "Recent situation"
     };
   }
-
-  const parsed = JSON.parse(jsonMatch[0]);
-  return {
-    summary: parsed.summary || "One partner shared their perspective on a situation that arose between you both.",
-    conflictName: parsed.conflictName || "Recent situation"
-  };
 }
