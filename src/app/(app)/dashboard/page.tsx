@@ -157,6 +157,30 @@ export default async function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
 
+          {/* Talk to Eros - Prominent CTA */}
+          <Link href="/eros">
+            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center">
+                      <span className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">E</span>
+                    </div>
+                  </div>
+                  <div className="text-white">
+                    <h2 className="text-xl font-bold mb-1">Talk to Eros</h2>
+                    <p className="text-purple-100 text-sm">
+                      Your private AI relationship counselor - available 24/7
+                    </p>
+                  </div>
+                </div>
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </Link>
+
           {/* Relationship Status */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             {isActive && favoritePhoto && (
