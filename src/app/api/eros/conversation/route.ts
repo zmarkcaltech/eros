@@ -146,7 +146,8 @@ export async function POST(request: NextRequest) {
     const userName = profile?.preferred_name || profile?.full_name || 'there';
 
     // Save user message
-    const { data: userMessage } = await supabase
+    console.log('Saving user message for conversation:', conversation_id);
+    const { data: userMessage, error: userMsgError } = await supabase
       .from('eros_conversation_messages')
       .insert({
         conversation_id: conversation_id,
@@ -155,6 +156,13 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single();
+
+    if (userMsgError) {
+      console.error('Error saving user message:', userMsgError);
+      return NextResponse.json({ error: 'Failed to save user message' }, { status: 500 });
+    }
+
+    console.log('User message saved successfully');
 
     // Get conversation history
     const { data: messages } = await supabase
@@ -177,6 +185,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Call Claude
+    console.log('Calling Claude API with', conversationHistory.length, 'messages');
     const aiResponse = await anthropic.messages.create({
       model: 'claude-opus-4-20250514',
       max_tokens: 1024,
@@ -188,10 +197,13 @@ export async function POST(request: NextRequest) {
       ? aiResponse.content[0].text
       : '';
 
+    console.log('AI response received, length:', aiContent.length);
+
     // Detect what we learned from this exchange and update conversation context
     const updates = await detectContextUpdates(content, aiContent, conversation);
 
     if (Object.keys(updates).length > 0) {
+      console.log('Updating conversation context with:', updates);
       await supabase
         .from('eros_conversations')
         .update(updates)
@@ -199,7 +211,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Save AI message
-    const { data: aiMessage } = await supabase
+    console.log('Saving AI message');
+    const { data: aiMessage, error: aiMsgError } = await supabase
       .from('eros_conversation_messages')
       .insert({
         conversation_id: conversation_id,
@@ -210,6 +223,13 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single();
+
+    if (aiMsgError) {
+      console.error('Error saving AI message:', aiMsgError);
+      return NextResponse.json({ error: 'Failed to save AI message' }, { status: 500 });
+    }
+
+    console.log('AI message saved successfully');
 
     // Update last_message_at
     await supabase
@@ -223,7 +243,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in POST /api/eros/conversation:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    return NextResponse.json(
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }
 

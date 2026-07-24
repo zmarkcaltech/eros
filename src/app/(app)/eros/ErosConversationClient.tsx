@@ -128,6 +128,7 @@ export default function ErosConversationClient({
     setLoading(true);
 
     try {
+      console.log('Sending message to API...');
       const response = await fetch('/api/eros/conversation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,14 +138,20 @@ export default function ErosConversationClient({
         })
       });
 
+      console.log('API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        const errorData = await response.json();
+        console.error('API error:', errorData);
+        throw new Error(errorData.details || 'Failed to send message');
       }
 
       const data = await response.json();
+      console.log('Received response:', data);
       setMessages(prev => [...prev, data.user_message, data.ai_message]);
     } catch (error) {
       console.error('Error sending message:', error);
+      alert('Error: ' + (error instanceof Error ? error.message : 'Failed to send message'));
       setInput(userInput);
     } finally {
       setLoading(false);
