@@ -85,7 +85,7 @@ Before we dive in, I'd love to understand how I can best help you today. Take yo
           conversation_id: conversation.id,
           sender_type: 'ai',
           content: openingMessage,
-          model_version: 'claude-opus-4-20250514',
+          model_version: 'claude-sonnet-4-5-20250929',
           prompt_type: 'discovery'
         })
         .select()
@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
     // Call Claude
     console.log('Calling Claude API with', conversationHistory.length, 'messages');
     const aiResponse = await anthropic.messages.create({
-      model: 'claude-opus-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: 1024,
       system: systemPrompt,
       messages: conversationHistory
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
         conversation_id: conversation_id,
         sender_type: 'ai',
         content: aiContent,
-        model_version: 'claude-opus-4-20250514',
+        model_version: 'claude-sonnet-4-5-20250929',
         prompt_type: determinePromptType(conversation, messages?.length || 0)
       })
       .select()

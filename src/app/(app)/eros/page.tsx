@@ -74,7 +74,7 @@ Before we dive in, I'd love to understand how I can best help you today. Take yo
         conversation_id: conversation!.id,
         sender_type: 'ai',
         content: openingMessage,
-        model_version: 'claude-opus-4-20250514',
+        model_version: 'claude-sonnet-4-5-20250929',
         prompt_type: 'discovery'
       })
       .select()
