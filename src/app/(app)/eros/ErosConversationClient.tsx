@@ -148,7 +148,8 @@ export default function ErosConversationClient({
 
       const data = await response.json();
       console.log('Received response:', data);
-      setMessages(prev => [...prev, data.user_message, data.ai_message]);
+      // Don't add messages here - let realtime subscription handle it
+      // This prevents duplicates
     } catch (error) {
       console.error('Error sending message:', error);
       alert('Error: ' + (error instanceof Error ? error.message : 'Failed to send message'));
