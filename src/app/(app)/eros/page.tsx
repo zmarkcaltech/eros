@@ -19,26 +19,19 @@ export default async function ErosConversationPage() {
     .eq('status', 'active')
     .single();
 
-  // Get or create conversation
-  let { data: conversation } = await supabase
+  // ALWAYS create a NEW conversation
+  const { data: conversation } = await supabase
     .from('eros_conversations')
-    .select('*')
-    .eq('user_id', user.id)
-    .maybeSingle();
+    .insert({
+      user_id: user.id,
+      relationship_id: relationship?.id || null,
+      status: 'active'
+    })
+    .select()
+    .single();
 
   if (!conversation) {
-    // Create new conversation
-    const { data: newConv } = await supabase
-      .from('eros_conversations')
-      .insert({
-        user_id: user.id,
-        relationship_id: relationship?.id || null,
-        status: 'active'
-      })
-      .select()
-      .single();
-
-    conversation = newConv;
+    return <div>Error creating conversation</div>;
   }
 
   // Get messages

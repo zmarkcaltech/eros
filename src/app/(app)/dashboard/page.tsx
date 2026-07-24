@@ -79,6 +79,15 @@ export default async function DashboardPage() {
     })
   }
 
+  // Get Eros conversations
+  const { data: erosConversations } = await supabase
+    .from('eros_conversations')
+    .select('id, conversation_name, status, message_count, last_message_at, created_at')
+    .eq('user_id', user.id)
+    .order('last_message_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(10);
+
   // Get unread notifications
   const { data: notifications, error: notifError } = await supabase
     .from('notifications')
@@ -180,6 +189,43 @@ export default async function DashboardPage() {
               </div>
             </div>
           </Link>
+
+          {/* Eros Conversations List */}
+          {erosConversations && erosConversations.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Conversations with Eros</h2>
+              <div className="space-y-2">
+                {erosConversations.map((conv) => (
+                  <Link
+                    key={conv.id}
+                    href={`/eros/${conv.id}`}
+                    className="block p-4 rounded-lg border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">
+                          {conv.conversation_name || 'New conversation'}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-gray-500">
+                            {conv.message_count || 0} messages
+                          </span>
+                          {conv.last_message_at && (
+                            <span className="text-xs text-gray-500">
+                              {new Date(conv.last_message_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Relationship Status */}
           <div className="bg-white rounded-lg shadow-md overflow-hidden">

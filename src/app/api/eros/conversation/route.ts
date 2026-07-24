@@ -202,12 +202,24 @@ export async function POST(request: NextRequest) {
     // Detect what we learned from this exchange and update conversation context
     const updates = await detectContextUpdates(content, aiContent, conversation);
 
+    // Increment message count
+    const newMessageCount = (conversation.message_count || 0) + 2; // user + ai message
+    updates.message_count = newMessageCount;
+
     if (Object.keys(updates).length > 0) {
       console.log('Updating conversation context with:', updates);
       await supabase
         .from('eros_conversations')
         .update(updates)
         .eq('id', conversation_id);
+    }
+
+    // Auto-name conversation after 4 messages (2 exchanges)
+    if (!conversation.auto_named && newMessageCount >= 4) {
+      console.log('Auto-naming conversation after', newMessageCount, 'messages');
+      generateConversationName(conversation_id, messages || [], supabase).catch(err =>
+        console.error('Error auto-naming conversation:', err)
+      );
     }
 
     // Save AI message
@@ -403,4 +415,63 @@ async function detectContextUpdates(userMessage: string, aiResponse: string, con
   }
 
   return updates;
+}
+
+async function generateConversationName(
+  conversationId: string,
+  messages: any[],
+  supabase: any
+): Promise<void> {
+  try {
+    // Get first few messages to understand the topic
+    const relevantMessages = messages.slice(0, 6);
+    const conversationSummary = relevantMessages
+      .map(m => `${m.sender_type === 'user' ? 'User' : 'Eros'}: ${m.content}`)
+      .join('\n\n');
+
+    const prompt = `Based on this conversation, generate a SHORT, descriptive name (3-6 words max) that captures the main topic.
+
+Conversation:
+${conversationSummary}
+
+Rules:
+- 3-6 words maximum
+- Descriptive but concise
+- Examples: "Household chore disagreement", "Communication about intimacy", "Processing partner's behavior"
+- NO quotes, NO punctuation at the end
+- Focus on the TOPIC, not the emotion
+
+Output ONLY the name, nothing else.`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 50,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const conversationName = response.content[0].type === 'text'
+      ? response.content[0].text.trim().replace(/['"]/g, '')
+      : 'Conversation with Eros';
+
+    console.log('Generated conversation name:', conversationName);
+
+    // Update conversation with name
+    await supabase
+      .from('eros_conversations')
+      .update({
+        conversation_name: conversationName,
+        auto_named: true
+      })
+      .eq('id', conversationId);
+  } catch (error) {
+    console.error('Error generating conversation name:', error);
+    // Fallback: use generic name
+    await supabase
+      .from('eros_conversations')
+      .update({
+        conversation_name: 'Conversation with Eros',
+        auto_named: true
+      })
+      .eq('id', conversationId);
+  }
 }
